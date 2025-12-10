@@ -7,7 +7,7 @@ const CARD_GAME = {
   packs: [
     {
       id: "royalist-lv1",
-      name: "保皇党 Lv1",
+      name: "保皇党",
       subtitle: "本篇 · 基础卡组",
       side: "保皇党",
       era: "主世界 · 一代",
@@ -18,8 +18,8 @@ const CARD_GAME = {
     },
     {
       id: "rebel-lv1",
-      name: "起义军 Lv1",
-      subtitle: "本篇 · 对立阵营",
+      name: "起义军",
+      subtitle: "本篇 · 基础卡组",
       side: "起义军",
       era: "主世界 · 一代",
       status: "released",
@@ -68,7 +68,7 @@ const CARD_GAME = {
   cards: {
     "royalist-lv1": [
       {
-        code: "RL1-01",
+        code: "RL1-0101",
         name: "示例：宫廷侍从",
         type: "单位",
         cost: "2",
@@ -78,7 +78,7 @@ const CARD_GAME = {
         note: "这里只是示例卡，真正数据请以后替换为 Excel 中的实际单卡。"
       },
       {
-        code: "RL1-02",
+        code: "RL1-0102",
         name: "示例：王室诏令",
         type: "事件",
         cost: "1",
