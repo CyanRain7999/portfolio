@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>卡牌数据生成器 | 月之森的黄瓜架</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Excel 解析库（SheetJS 简单用法） -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="index.html" class="logo">月の森<span>🥒</span></a>
+        <nav class="nav-links">
+          <a href="index.html" class="nav-link">资料馆首页</a>
+          <a href="boardgame.html" class="nav-link">桌游资料馆</a>
+          <a href="https://cyanrain7999.github.io" class="nav-link">返回主站</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container card-gen-main">
+      <section class="hero">
+        <p class="eyebrow">Tools · 内部小工具</p>
+        <h1 class="hero-title">卡牌数据生成器</h1>
+        <p class="hero-subtitle">
+          读取 Excel（.xlsx）中的单卡信息，根据表头自动生成可以粘贴进
+          <code>boardgame-data.js</code> 的卡包 / 单卡数据片段。
+          <br />
+          只在本地浏览器里跑，不会上传到任何地方，是你自己的小工作台。
+        </p>
+      </section>
+
+      <section class="card-gen-section">
+        <div class="card-gen-grid">
+          <!-- 左侧：配置 + 上传 -->
+          <div class="card-gen-panel">
+            <h2 class="section-title small">1. 配置卡包信息</h2>
+
+            <div class="form-row">
+              <label for="pack-id">卡包 id（英文，用来当 key）</label>
+              <input
+                id="pack-id"
+                class="input"
+                type="text"
+                placeholder="例如：royalist-lv1"
+              />
+            </div>
+
+            <div class="form-row">
+              <label for="pack-name">卡包名称（显示在页面上）</label>
+              <input
+                id="pack-name"
+                class="input"
+                type="text"
+                placeholder="例如：保皇党 Lv1"
+              />
+            </div>
+
+            <div class="form-row">
+              <label for="pack-subtitle">卡包副标题（可选）</label>
+              <input
+                id="pack-subtitle"
+                class="input"
+                type="text"
+                placeholder="例如：本篇 · 基础卡组"
+              />
+            </div>
+
+            <div class="form-row form-row-inline">
+              <div class="form-col">
+                <label for="pack-side">阵营 / 阵营说明</label>
+                <input
+                  id="pack-side"
+                  class="input"
+                  type="text"
+                  placeholder="例如：保皇党 / 起义军"
+                />
+              </div>
+              <div class="form-col">
+                <label for="pack-era">时代 / 世界（可选）</label>
+                <input
+                  id="pack-era"
+                  class="input"
+                  type="text"
+                  placeholder="例如：主世界 · 一代"
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label for="pack-status">状态</label>
+              <select id="pack-status" class="input">
+                <option value="released">已收录（released）</option>
+                <option value="wip">整理中（wip）</option>
+                <option value="planned">计划中（planned）</option>
+                <option value="placeholder">占位（placeholder）</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="code-prefix">卡牌代码前缀（可选，比如 RL1 / RB1）</label>
+              <input
+                id="code-prefix"
+                class="input"
+                type="text"
+                placeholder="用于生成 RL1-01, RL1-02 这样的 code"
+              />
+            </div>
+
+            <hr class="card-gen-divider" />
+
+            <h2 class="section-title small">2. 选择 Excel 文件</h2>
+            <p class="card-gen-hint">
+              表头请包含：<code>name</code>、<code>category</code>、
+              <code>number</code>、<code>atk&hp</code>、
+              <code>tags</code>、<code>text</code>
+            </p>
+
+            <div class="form-row">
+              <input
+                id="excel-file"
+                type="file"
+                accept=".xlsx,.xls"
+                class="input"
+              />
+            </div>
+
+            <p id="file-status" class="card-gen-status">
+              尚未选择文件。
+            </p>
+
+            <button id="generate-btn" class="btn btn-primary btn-compact" type="button">
+              生成 JS 片段
+            </button>
+          </div>
+
+          <!-- 右侧：输出 -->
+          <div class="card-gen-panel card-gen-output-panel">
+            <h2 class="section-title small">3. 复制结果到 boardgame-data.js</h2>
+
+            <div class="form-row">
+              <label for="pack-output">① packs 数组里的卡包对象</label>
+              <textarea
+                id="pack-output"
+                class="card-gen-textarea"
+                readonly
+                placeholder="这里会生成一个要粘贴进 CARD_GAME.packs 的对象片段……"
+              ></textarea>
+            </div>
+
+            <div class="form-row">
+              <label for="cards-output">② cards 对象中的该卡包条目</label>
+              <textarea
+                id="cards-output"
+                class="card-gen-textarea"
+                readonly
+                placeholder="这里会生成一个要粘贴进 CARD_GAME.cards 的 \"id\": [ ... ] 片段……"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        © 2025 月之森的黄瓜架 · Tools
+      </div>
+    </footer>
+  </div>
+
+  <script src="portfolio-particles.js"></script>
+  <script>
+    const state = {
+      rows: []
+    };
+
+    const fileInput = document.getElementById("excel-file");
+    const statusEl = document.getElementById("file-status");
+    const generateBtn = document.getElementById("generate-btn");
+    const packOutput = document.getElementById("pack-output");
+    const cardsOutput = document.getElementById("cards-output");
+
+    function esc(str) {
+      return String(str || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g, '\\"');
+    }
+
+    function handleFileChange(e) {
+      const file = e.target.files[0];
+      if (!file) {
+        state.rows = [];
+        statusEl.textContent = "尚未选择文件。";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+          state.rows = rows;
+          statusEl.textContent = `已读取工作表「${sheetName}」，共 ${rows.length} 行。`;
+        } catch (err) {
+          console.error(err);
+          state.rows = [];
+          statusEl.textContent = "解析 Excel 失败，请检查文件格式。";
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function generateSnippets() {
+      const rows = state.rows || [];
+      if (!rows.length) {
+        alert("请先选择 Excel 文件，并确保解析成功。");
+        return;
+      }
+
+      const packId = document.getElementById("pack-id").value.trim();
+      const packName = document.getElementById("pack-name").value.trim();
+      const packSubtitle = document.getElementById("pack-subtitle").value.trim();
+      const packSide = document.getElementById("pack-side").value.trim();
+      const packEra = document.getElementById("pack-era").value.trim();
+      const packStatus = document.getElementById("pack-status").value;
+      const codePrefix = document.getElementById("code-prefix").value.trim();
+
+      if (!packId || !packName) {
+        alert("至少要填：卡包 id 和 卡包名称。");
+        return;
+      }
+
+      // ① 生成 packs 里的对象片段
+      const packSnippet = `{
+  id: "${esc(packId)}",
+  name: "${esc(packName)}",
+  subtitle: "${esc(packSubtitle)}",
+  side: "${esc(packSide)}",
+  era: "${esc(packEra)}",
+  status: "${esc(packStatus)}",
+  description: "在这里写一句对「${esc(packName)}」的介绍。",
+  note: ""
+},`;
+
+      packOutput.value = packSnippet;
+
+      // ② 生成 cards 里的条目
+      const cardObjects = [];
+
+      rows.forEach((row, index) => {
+        const name = (row.name || row["name"] || "").trim();
+        if (!name) return; // 跳过空行
+
+        const category = (row.category || row["category"] || "").trim();
+        const number = String(row.number || row["number"] || "").trim();
+        const atkHp = String(row["atk&hp"] || row["atk&HP"] || row["ATK&HP"] || "").trim();
+        const rawTags = String(row.tags || row["tags"] || "").trim();
+        const text = String(row.text || row["text"] || "").trim();
+
+        const tags =
+          rawTags.length > 0
+            ? rawTags.split(/[，,]/).map((t) => t.trim()).filter(Boolean)
+            : [];
+
+        const code =
+          codePrefix.length > 0
+            ? `${codePrefix}-${String(index + 1).padStart(2, "0")}`
+            : "";
+
+        cardObjects.push({
+          code,
+          name,
+          type: category,
+          count: number,
+          stats: atkHp,
+          role: packSide,
+          tags,
+          text
+        });
+      });
+
+      if (!cardObjects.length) {
+        cardsOutput.value = "// 没有从 Excel 中读到任何有效行，请检查表头和内容。";
+        return;
+      }
+
+      const lines = [];
+      lines.push(`"${esc(packId)}": [`);
+      cardObjects.forEach((card, idx) => {
+        const tagArray =
+          card.tags && card.tags.length
+            ? `[${card.tags.map((t) => `"${esc(t)}"`).join(", ")}]`
+            : "[]";
+
+        lines.push("  {");
+        if (card.code) lines.push(`    code: "${esc(card.code)}",`);
+        lines.push(`    name: "${esc(card.name)}",`);
+        if (card.type) lines.push(`    type: "${esc(card.type)}",`);
+        if (card.count) lines.push(`    count: "${esc(card.count)}",`);
+        if (card.stats) lines.push(`    stats: "${esc(card.stats)}",`);
+        if (card.role) lines.push(`    role: "${esc(card.role)}",`);
+        if (card.tags && card.tags.length) {
+          lines.push(`    tags: ${tagArray},`);
+        }
+        if (card.text) {
+          lines.push(`    text: "${esc(card.text)}"`);
+        } else {
+          // 去掉最后一个逗号
+          if (lines[lines.length - 1].trim().endsWith(",")) {
+            lines[lines.length - 1] = lines[lines.length - 1].replace(/,+\s*$/, "");
+          }
+        }
+        // 如果 text 为空但前一行有逗号也处理过了
+        lines.push(idx === cardObjects.length - 1 ? "  }" : "  },");
+      });
+      lines.push("],");
+
+      cardsOutput.value = lines.join("\n");
+    }
+
+    fileInput.addEventListener("change", handleFileChange);
+    generateBtn.addEventListener("click", generateSnippets);
+  </script>
+</body>
+</html>

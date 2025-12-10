@@ -147,10 +147,11 @@
                 <p class="card-item-meta">
                   <span>${card.type || "类型未标注"}</span>
                   ${
-                    card.cost
-                      ? `<span class="dot-sep">·</span><span>费用 ${card.cost}</span>`
+    		    card.atkHp && card.atkHp !== "0"
+                      ? `<span class="dot-sep">·</span><span>ATK/HP ${card.atkHp}</span>`
                       : ""
                   }
+
                   ${
                     card.role
                       ? `<span class="dot-sep">·</span><span>${card.role}</span>`
