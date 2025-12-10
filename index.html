@@ -2,74 +2,91 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>月之森的黄瓜架</title>
+  <title>作品资料库 | 你的名字</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<canvas id="bg-canvas"></canvas>
-  <!-- 顶部导航 -->
+  <canvas id="bg-canvas"></canvas>
+
   <header class="site-header">
     <div class="container navbar">
-      <a href="index.html" class="logo">月の森<span>🥒</span></a>
+      <a href="https://cyanrain7999.github.io" class="logo">
+        YOUR<span>NAME</span>
+      </a>
       <nav class="nav-links">
-        <a href="index.html" class="nav-link active">主页</a>
-        <a href="about.html" class="nav-link">关于我</a>
-        <a href="projects.html" class="nav-link">项目</a>
-        <a href="contact.html" class="nav-link">联系</a>
-        <a href="game.html" class="nav-link">小游戏</a>
+        <a href="https://cyanrain7999.github.io" class="nav-link">返回主页</a>
+        <a href="#boardgame" class="nav-link">桌游</a>
+        <a href="#gal" class="nav-link">Gal 世界观</a>
+        <a href="#gallery" class="nav-link">画廊</a>
       </nav>
     </div>
   </header>
 
   <main class="container">
-    <section class="hero">
-      <div>
-        <div class="hero-highlight">
-          <span>在 GitHub 上写故事</span> · Personal Site
-        </div>
-        <h1 class="hero-title">你好，我是CyanRain，一名正在升级中的开发者。</h1>
-        <p class="hero-subtitle">
-          这里是我的小站，用来放一些项目、随想，还有正在进行中的折腾。
-        </p>
+    <section class="section">
+      <h1 class="section-title">作品资料库 / Portfolio</h1>
+      <p class="section-subtitle">
+        这里是一些正在进行中的世界：桌游、Galgame 企划、角色与画廊。<br />
+        正式官网还在施工，这里先当作临时的类 Wiki 与档案馆。
+      </p>
+    </section>
 
-        <div class="hero-meta">
-          <div class="chip">
-            <span class="chip-dot"></span>
-            <span>学习 / 打磨</span>
-          </div>
-          <span>语言：C/PYTHON/HTML/GODOT</span>
-        </div>
-
-        <div class="btn-row">
-          <a href="projects.html" class="btn btn-primary">查看项目</a>
-          
-          <a href="https://github.com/CyanRain7999" class="btn btn-ghost" target="_blank">前往 GitHub</a>
-        </div>
+    <section id="boardgame" class="section">
+      <h2 class="section-title">桌游档案 · 类 Wiki</h2>
+      <p class="section-subtitle">
+        规则书、势力设定、卡牌列表与平衡调整记录，将逐步整理在这里。
+      </p>
+      <div class="card-grid">
+        <a class="card" href="boardgame/index.html">
+          <h3 class="card-title">进入桌游资料页</h3>
+          <p class="card-text">
+            查看规则概要、对局结构、势力设计思路，以及每张卡背后的小故事。
+          </p>
+        </a>
       </div>
+    </section>
 
-      <aside class="hero-card">
-        <div class="hero-card-header">
-          <div class="hero-card-title">Snapshot</div>
-          <div class="badge">v1 · Simple</div>
-        </div>
-        <div class="hero-card-main">
-          一个简单的多页面个人站。以上。
-        </div>
-        <div class="hero-card-list">
-          <div>· GitHub Pages 静态托管</div>
-          <div>· 多页面导航：主页 / 关于 / 项目 / 联系 / 小游戏</div>
-          <div>· 想改就改</div>
-        </div>
-      </aside>
+    <section id="gal" class="section">
+      <h2 class="section-title">Gal 世界观 · 设定集</h2>
+      <p class="section-subtitle">
+        背景设定、时间线、角色档案、关键事件与分支构想。
+      </p>
+      <div class="card-grid">
+        <a class="card" href="gal/index.html">
+          <h3 class="card-title">进入世界观档案</h3>
+          <p class="card-text">
+            了解故事发生的城市、主要角色的过去与现在，以及还没写进游戏里的那些细节。
+          </p>
+        </a>
+      </div>
+    </section>
+
+    <section id="gallery" class="section">
+      <h2 class="section-title">画廊 · Gallery</h2>
+      <p class="section-subtitle">
+        立绘、宣传图、草图与一些视觉尝试，会慢慢归档到这里。
+      </p>
+      <div class="card-grid">
+        <a class="card" href="gallery/index.html">
+          <h3 class="card-title">进入画廊</h3>
+          <p class="card-text">
+            按角色 / 项目分类浏览图片，未来也可以直接跳转到各自的官网。
+          </p>
+        </a>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="container">
-      © 2025 月之森的黄瓜架 · Hosted on GitHub Pages
+      © 2025 你的名字 · 作品资料库 ·
+      <a href="https://cyanrain7999.github.io" class="footer-link">
+        返回个人主页
+      </a>
     </div>
   </footer>
-<script src="particles.js"></script>
+
+  <script src="particles.js"></script>
 </body>
 </html>
