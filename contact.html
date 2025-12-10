@@ -76,21 +76,49 @@
 
 <script>
     function sendMailFromForm() {
-      const name = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const msg = document.getElementById('message').value.trim();
+  	const name = document.getElementById("name").value.trim();
+  	const email = document.getElementById("email").value.trim();
+ 	const msg = document.getElementById("message").value.trim();
 
-      const to = '18363028368@163.com'; // TODO
-      const subject = '来自个人网站联系页的留言';
+  	const to = "youremail@example.com"; // 换成你的真实邮箱
+  	const subject = "来自个人网站联系页的留言";
 
-      let body = '';
-      if (name) body += `称呼：${name}\n`;
-      if (email) body += `联系邮箱：${email}\n`;
-      if (msg) body += `\n留言内容：\n${msg}`;
+  	let body = "";
+  	if (name) body += `称呼：${name}\n`;
+  	if (email) body += `联系邮箱：${email}\n`;
+  	if (msg) body += `\n留言内容：\n${msg}`;
 
-      const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.location.href = mailto;
-    }
+  	// 1）尝试用 mailto 打开本地邮箱 / Gmail
+  	const mailto = `mailto:${to}?subject=${encodeURIComponent(
+    	subject
+  	)}&body=${encodeURIComponent(body)}`;
+  	window.location.href = mailto;
+
+  	// 2）顺便把完整邮件文本复制到剪贴板，防止 mailto 不生效
+  	const plainText = `收件人：${to}\n主题：${subject}\n\n${body}`;
+
+  	if (navigator.clipboard && navigator.clipboard.writeText) {
+    	navigator.clipboard
+      	.writeText(plainText)
+      	.then(() => {
+        	alert(
+          	"已经帮你打开本地邮箱（如果已设置），并把邮件内容复制到剪贴板啦。\n如果没有自动弹出邮箱，可以自己打开常用邮箱，直接粘贴发送。"
+        	);
+     	 })
+      .catch(() => {
+        alert(
+          "已经尝试打开本地邮箱。\n如果没有反应，请手动复制下面的内容到你常用的邮箱去发送：\n\n" +
+            plainText
+        );
+      });
+  } else {
+    alert(
+      "已经尝试打开本地邮箱。\n如果没有反应，请手动复制下面的内容到你常用的邮箱去发送：\n\n" +
+        plainText
+    );
+  }
+}
+
   </script>
 
 <script src="particles.js"></script>
