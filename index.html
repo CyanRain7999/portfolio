@@ -2,91 +2,185 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>作品资料库 | 你的名字</title>
+  <title>作品资料馆 | 月之森的黄瓜架</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- 背景粒子画布 -->
   <canvas id="bg-canvas"></canvas>
 
-  <header class="site-header">
-    <div class="container navbar">
-      <a href="https://cyanrain7999.github.io" class="logo">
-        YOUR<span>NAME</span>
-      </a>
-      <nav class="nav-links">
-        <a href="https://cyanrain7999.github.io" class="nav-link">返回主页</a>
-        <a href="#boardgame" class="nav-link">桌游</a>
-        <a href="#gal" class="nav-link">Gal 世界观</a>
-        <a href="#gallery" class="nav-link">画廊</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="container">
-    <section class="section">
-      <h1 class="section-title">作品资料库 / Portfolio</h1>
-      <p class="section-subtitle">
-        这里是一些正在进行中的世界：桌游、Galgame 企划、角色与画廊。<br />
-        正式官网还在施工，这里先当作临时的类 Wiki 与档案馆。
-      </p>
-    </section>
-
-    <section id="boardgame" class="section">
-      <h2 class="section-title">桌游档案 · 类 Wiki</h2>
-      <p class="section-subtitle">
-        规则书、势力设定、卡牌列表与平衡调整记录，将逐步整理在这里。
-      </p>
-      <div class="card-grid">
-        <a class="card" href="boardgame/index.html">
-          <h3 class="card-title">进入桌游资料页</h3>
-          <p class="card-text">
-            查看规则概要、对局结构、势力设计思路，以及每张卡背后的小故事。
-          </p>
-        </a>
+  <div class="shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <!-- 品牌：按你要求保留这个 logo 写法 -->
+        <a href="index.html" class="logo">月の森<span>🥒</span></a>
+        <nav class="nav-links">
+          <a href="https://cyanrain7999.github.io" class="nav-link">
+            返回主站
+          </a>
+        </nav>
       </div>
-    </section>
+    </header>
 
-    <section id="gal" class="section">
-      <h2 class="section-title">Gal 世界观 · 设定集</h2>
-      <p class="section-subtitle">
-        背景设定、时间线、角色档案、关键事件与分支构想。
-      </p>
-      <div class="card-grid">
-        <a class="card" href="gal/index.html">
-          <h3 class="card-title">进入世界观档案</h3>
+    <main class="container">
+      <!-- 顶部简介 -->
+      <section class="hero">
+        <p class="eyebrow">作品资料馆 · Portfolio</p>
+        <h1 class="hero-title">月之森的档案室</h1>
+        <p class="hero-subtitle">
+          把桌游规则、世界观设定、角色档案，还有零碎的灵感与画面，慢慢收集到一间安静的小房间里。
+          <br />
+          这里更像是一个资料室，而不是展示厅。
+        </p>
+      </section>
+
+      <!-- 三大模块卡片 -->
+      <section class="card-grid">
+        <!-- 桌游 -->
+        <article class="info-card">
+          <div class="card-tag">Board Game</div>
+          <h2 class="card-title">桌游资料馆</h2>
           <p class="card-text">
-            了解故事发生的城市、主要角色的过去与现在，以及还没写进游戏里的那些细节。
+            规则书、卡表、FAQ、示例对局、设计笔记……让喜欢钻规则和构筑的人有地方可以翻着看。
           </p>
-        </a>
-      </div>
-    </section>
+          <div class="card-actions">
+            <!-- 以后你可以建 boardgame.html，当成类 Wiki 首页 -->
+            <a href="boardgame.html" class="btn btn-primary">
+              进入资料馆
+            </a>
+            <!-- 这按钮留给“桌游官网”，等你搭好改 href 即可 -->
+            <a href="#" class="btn btn-ghost" target="_blank" rel="noreferrer">
+              桌游官网（预留）
+            </a>
+          </div>
+        </article>
 
-    <section id="gallery" class="section">
-      <h2 class="section-title">画廊 · Gallery</h2>
-      <p class="section-subtitle">
-        立绘、宣传图、草图与一些视觉尝试，会慢慢归档到这里。
-      </p>
-      <div class="card-grid">
-        <a class="card" href="gallery/index.html">
-          <h3 class="card-title">进入画廊</h3>
+        <!-- Gal 世界观 -->
+        <article class="info-card">
+          <div class="card-tag">Galgame</div>
+          <h2 class="card-title">世界观与角色档案</h2>
           <p class="card-text">
-            按角色 / 项目分类浏览图片，未来也可以直接跳转到各自的官网。
+            世界线、时间轴、地点小设定，路线结构树，还有主要角色的性格笔记与幕后设定。
           </p>
-        </a>
+          <div class="card-actions">
+            <!-- 以后可以建 galworld.html，当成世界观总览 -->
+            <a href="galworld.html" class="btn btn-primary">
+              进入设定集
+            </a>
+            <!-- 留给 Gal 官方站 -->
+            <a href="#" class="btn btn-ghost" target="_blank" rel="noreferrer">
+              Gal 官网（预留）
+            </a>
+          </div>
+        </article>
+
+        <!-- 画廊 -->
+        <article class="info-card">
+          <div class="card-tag">Gallery</div>
+          <h2 class="card-title">画廊 · Gallery</h2>
+          <p class="card-text">
+            宣传图、立绘、UI 草稿、废案 Logo……它们未必都会出现在正式成品里，但在这里都可以留下脚印。
+          </p>
+          <div class="card-actions">
+            <!-- 以后可以建 gallery.html 展示图片 -->
+            <a href="gallery.html" class="btn btn-primary">
+              查看画廊
+            </a>
+            <!-- 预留一个总入口，等你有更大的图站、Pixiv 等 -->
+            <a href="#" class="btn btn-ghost" target="_blank" rel="noreferrer">
+              图站 / 图床（预留）
+            </a>
+          </div>
+        </article>
+      </section>
+
+      <!-- 小备注区域（可删） -->
+      <section class="note-block">
+        <p class="note-text">
+          ⬤ 现在这些入口有些还会 404，是预留出来的空房间。<br />
+          ⬤ 等你把对应官网 / 设定页搭出来之后，只需要改上面的链接即可。
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        © 2025 月之森的黄瓜架 · Portfolio
       </div>
-    </section>
-  </main>
+    </footer>
+  </div>
 
-  <footer class="site-footer">
-    <div class="container">
-      © 2025 你的名字 · 作品资料库 ·
-      <a href="https://cyanrain7999.github.io" class="footer-link">
-        返回个人主页
-      </a>
-    </div>
-  </footer>
+  <!-- 粒子背景脚本：和主站完全不同的柔和“萤光尘埃”效果 -->
+  <script>
+    (function () {
+      const canvas = document.getElementById("bg-canvas");
+      const ctx = canvas.getContext("2d");
+      let width = 0;
+      let height = 0;
+      let particles = [];
+      let lastTime = 0;
 
-  <script src="particles.js"></script>
+      function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        initParticles();
+      }
+
+      function initParticles() {
+        const baseCount = Math.floor((width * height) / 30000);
+        const count = Math.min(Math.max(baseCount, 40), 120);
+        particles = [];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            r: 1 + Math.random() * 1.4,
+            vy: 0.12 + Math.random() * 0.25, // 慢慢往上飘
+            drift: Math.random() * 0.4 - 0.2, // 轻微水平漂移
+            alpha: 0.22 + Math.random() * 0.28,
+          });
+        }
+      }
+
+      function loop(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        const dt = (timestamp - lastTime) / 16.67;
+        lastTime = timestamp;
+
+        // 柔和竖向渐变底色
+        const g = ctx.createLinearGradient(0, 0, 0, height);
+        g.addColorStop(0, "rgba(246, 245, 241, 0.96)");
+        g.addColorStop(1, "rgba(232, 238, 232, 0.96)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, width, height);
+
+        for (const p of particles) {
+          p.y -= p.vy * dt * 0.6;
+          p.x += p.drift * dt;
+
+          if (p.y + p.r < 0) {
+            p.y = height + p.r;
+            p.x = Math.random() * width;
+          }
+          if (p.x < -20) p.x = width + 20;
+          if (p.x > width + 20) p.x = -20;
+
+          ctx.globalAlpha = p.alpha;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(148, 163, 184, 0.8)";
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+      requestAnimationFrame(loop);
+    })();
+  </script>
 </body>
 </html>
