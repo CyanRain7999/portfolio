@@ -1,0 +1,43 @@
+五、以后你怎么“加卡包 / 加卡牌”？
+
+只动 一个文件：boardgame-data.js。
+
+1）新增卡包
+
+在 CARD_GAME.packs 数组里加一段：
+
+{
+  id: "mirror-world-hongyuan",
+  name: "鸿园",
+  subtitle: "DLC2 · 镜世界",
+  side: "镜世界阵营",
+  era: "镜世界",
+  status: "planned", // 现在可以是 planned，做好后改 released
+  description: "这里写你对鸿园卡包的一句话介绍。",
+  note: "将来把 Excel 里的鸿园单卡抄进 cards 里。"
+}
+
+
+不用改任何 HTML，它会自动出现在 boardgame.html 的卡包列表里。
+如果你想再加一个「空卡包」占位，就再加一个 status: "placeholder" 的对象。
+
+2）给某个卡包加卡牌
+
+在 CARD_GAME.cards 里，对应的 id 下面加一条：
+
+"mirror-world-hongyuan": [
+  {
+    code: "MH-01",
+    name: "示例：镜中行者",
+    type: "单位",
+    cost: "3",
+    role: "鸿园",
+    tags: ["镜世界", "核心单位"],
+    text: "【示例效果】这里写实际效果文本。",
+    note: "备注可以空着，也可以写设计笔记。"
+  },
+  // ...更多卡
+],
+
+
+然后打开：boardgame-pack.html?id=mirror-world-hongyuan，就能看到卡牌卡片了。

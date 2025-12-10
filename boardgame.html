@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>桌游资料馆 | 月之森的黄瓜架</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="index.html" class="logo">月の森<span>🥒</span></a>
+        <nav class="nav-links">
+          <a href="index.html" class="nav-link">资料馆首页</a>
+          <a href="https://cyanrain7999.github.io" class="nav-link">返回主站</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="hero boardgame-hero">
+        <p class="eyebrow">Board Game · 卡牌资料馆</p>
+        <h1 class="hero-title">月之森 · 桌游卡包总览</h1>
+        <p class="hero-subtitle">
+          这里收纳了桌游各个卡包的规则与单卡信息。
+          <br />
+          每个卡包都有自己的节奏和故事，从基础篇一直延伸到 DLC 与异世界。
+        </p>
+      </section>
+
+      <section>
+        <div class="boardgame-pack-grid" id="pack-grid">
+          <!-- 由 JS 渲染卡包 card -->
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        © 2025 月之森的黄瓜架 · Board Game
+      </div>
+    </footer>
+  </div>
+
+  <!-- 先引入桌游数据，再用脚本渲染卡包列表 -->
+  <script src="boardgame-data.js"></script>
+  <script src="portfolio-particles.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (!window.CARD_GAME || !Array.isArray(CARD_GAME.packs)) return;
+
+      const grid = document.getElementById("pack-grid");
+      const packs = [...CARD_GAME.packs];
+
+      // 按 status + 原始顺序排序：正常包在前，placeholder 在最后
+      packs.sort((a, b) => {
+        const order = { released: 0, wip: 1, planned: 2, placeholder: 3 };
+        return (order[a.status] || 99) - (order[b.status] || 99);
+      });
+
+      packs.forEach((pack) => {
+        const isPlaceholder = pack.status === "placeholder";
+
+        const card = document.createElement("article");
+        card.className =
+          "boardgame-pack-card" +
+          (isPlaceholder ? " boardgame-pack-card--placeholder" : "");
+
+        const badgeText =
+          pack.status === "released"
+            ? "已收录"
+            : pack.status === "wip"
+            ? "整理中"
+            : pack.status === "planned"
+            ? "计划中"
+            : "预留空位";
+
+        card.innerHTML = `
+          <div class="boardgame-pack-card-header">
+            <div class="pack-badge">${badgeText}</div>
+            ${
+              pack.subtitle
+                ? `<div class="pack-subtitle">${pack.subtitle}</div>`
+                : ""
+            }
+          </div>
+          <h2 class="boardgame-pack-title">${pack.name}</h2>
+          <p class="boardgame-pack-meta">
+            <span>${pack.side || ""}</span>
+            ${
+              pack.era
+                ? `<span class="dot-sep">·</span><span>${pack.era}</span>`
+                : ""
+            }
+          </p>
+          <p class="boardgame-pack-desc">
+            ${pack.description || ""}
+          </p>
+          ${
+            pack.note
+              ? `<p class="boardgame-pack-note">${pack.note}</p>`
+              : ""
+          }
+          <div class="boardgame-pack-footer">
+            ${
+              isPlaceholder
+                ? `<span class="pack-placeholder-text">这里预留给未来的卡包。</span>`
+                : `<a href="boardgame-pack.html?id=${encodeURIComponent(
+                    pack.id
+                  )}" class="btn btn-primary btn-compact">查看卡牌总览</a>`
+            }
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    });
+  </script>
+</body>
+</html>

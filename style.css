@@ -293,3 +293,188 @@ body {
     align-items: flex-start;
   }
 }
+
+/* ====== 桌游资料馆：卡包列表 ====== */
+
+.boardgame-hero {
+  padding-top: 3rem;
+  padding-bottom: 1.8rem;
+}
+
+.boardgame-pack-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem 1.5rem;
+  padding-bottom: 2.5rem;
+}
+
+.boardgame-pack-card {
+  border-radius: 1rem;
+  padding: 1.1rem 1.2rem;
+  background: var(--card-bg);
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-height: 150px;
+}
+
+.boardgame-pack-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pack-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 0.7rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: rgba(199, 224, 208, 0.6);
+  color: var(--accent);
+}
+
+.pack-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.boardgame-pack-title {
+  font-size: 1.1rem;
+  margin: 0.1rem 0 0;
+}
+
+.boardgame-pack-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.dot-sep::before {
+  content: "·";
+  margin: 0 0.1rem;
+  color: var(--text-muted);
+}
+
+.boardgame-pack-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.boardgame-pack-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
+.boardgame-pack-footer {
+  margin-top: 0.6rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.boardgame-pack-card--placeholder {
+  border-style: dashed;
+  background: rgba(246, 245, 241, 0.96);
+}
+
+.pack-placeholder-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ====== 桌游资料馆：单卡列表 ====== */
+
+.boardgame-pack-hero {
+  padding-top: 3rem;
+  padding-bottom: 1.8rem;
+}
+
+.card-list-section {
+  padding-bottom: 2.4rem;
+}
+
+.card-list-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem 1.1rem;
+}
+
+.card-item {
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.6);
+}
+
+.card-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.2rem;
+}
+
+.card-item-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+  color: var(--text-muted);
+}
+
+.card-item-name {
+  font-size: 0.98rem;
+  margin: 0;
+}
+
+.card-item-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.card-item-tags {
+  font-size: 0.8rem;
+  color: var(--accent);
+  margin-top: 0.2rem;
+}
+
+.card-item-text {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  line-height: 1.6;
+}
+
+.card-item-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+}
+
+@media (min-width: 768px) {
+  .boardgame-pack-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .card-list-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+
