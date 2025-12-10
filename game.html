@@ -21,12 +21,15 @@
       </nav>
     </div>
   </header>
-<main class="container">
+
+
+  <main class="container">
     <section>
-      <h1 class="section-title">弹幕练习场</h1>
+      <h1 class="section-title">弹幕练习</h1>
       <p class="section-subtitle">
-        操作：↑ ↓ ← → 移动；<br />
-        按住 <strong>Shift</strong> 低速微调，<strong>Z</strong> 连射，<strong>X</strong> Bomb 清屏＋短暂无敌。
+        操作：↑ ↓ ← → 移动<br />
+        按住 <strong>Shift</strong> 低速微调，<strong>Z</strong> 连射，<strong>X</strong> Bomb 清屏＋短暂无敌。<br />
+
       </p>
 
       <div class="game-wrapper">
@@ -41,7 +44,7 @@
 
         <p class="section-subtitle" style="margin-top: 0.6rem;">
           小圆点就是你，顶部那团光是敌机。<br />
-          存活时间越久越好，擦弹（贴着弹幕走）会计数，Bomb 数有限要省着用。
+
         </p>
       </div>
     </section>
@@ -56,7 +59,7 @@
   <!-- 粒子背景 -->
   <script src="particles.js"></script>
 
-  <!-- 弹幕 + 自机 / 敌机 + Z 射击 + X 炸弹 -->
+  <!-- 弹幕 + 非符/符卡序列 + Z 射击 + X 炸弹 -->
   <script>
     (function () {
       const canvas = document.getElementById("game-canvas");
@@ -65,16 +68,69 @@
       const width = canvas.width;
       const height = canvas.height;
 
+      // 阶段配置：非符1 → 符1 → 非符2 → 符2 → 非符3 → 终符
+      const PHASES = [
+        {
+          id: "ns1",
+          title: "",
+          type: "nonspell",
+          hp: 400,
+          delayMin: 70,
+          delayMax: 90
+        },
+        {
+          id: "spell1",
+          title: "星符「星粒散射」",
+          type: "spell",
+          hp: 1000,
+          delayMin: 60,
+          delayMax: 80
+        },
+        {
+          id: "ns2",
+          title: "",
+          type: "nonspell",
+          hp: 400,
+          delayMin: 65,
+          delayMax: 85
+        },
+        {
+          id: "spell2",
+          title: "星符「星轨轻扇」",
+          type: "spell",
+          hp: 1100,
+          delayMin: 55,
+          delayMax: 75
+        },
+        {
+          id: "ns3",
+          title: "",
+          type: "nonspell",
+          hp: 500,
+          delayMin: 60,
+          delayMax: 80
+        },
+        {
+          id: "final",
+          title: "「缓行螺旋星雨」",
+          type: "spell",
+          hp: 1100,
+          delayMin: 50,
+          delayMax: 70
+        }
+      ];
+      const TOTAL_PHASES = PHASES.length;
+
       // 自机
       const player = {
         x: width / 2,
         y: height - 70,
-        hitRadius: 4,    // 判定点半径
+        hitRadius: 3,    // 判定点半径
         drawRadius: 9,   // 外圈显示
-        baseSpeed: 3.8,
+        baseSpeed: 3.6
       };
 
-      // 键盘状态（统一映射）
+      // 键盘状态
       const keys = {
         left: false,
         right: false,
@@ -82,7 +138,7 @@
         down: false,
         shift: false,
         z: false,
-        x: false,
+        x: false
       };
 
       const keyMap = {
@@ -94,29 +150,31 @@
         z: "z",
         Z: "z",
         x: "x",
-        X: "x",
+        X: "x"
       };
 
-      // 敌机（boss 简化版）
+      // Boss
       const boss = {
         x: width / 2,
         y: 90,
         radius: 26,
-        maxHp: 320,
-        hp: 320,
+        phaseIndex: 0,
+        maxHp: PHASES[0].hp,
+        hp: PHASES[0].hp,
         dir: 1,
-        moveSpeed: 0.8,
-        phase: 1,
-        alive: true,
+        moveSpeed: 0.6,
+        alive: true
       };
 
-      // 敌机弹幕、自机子弹
+      let currentPhase = PHASES[0];
+
+      // 弹幕、自机子弹
       const enemyBullets = [];
       const playerBullets = [];
 
       // 游戏状态
       let lastTime = 0;
-      let timeAlive = 0;   // 存活时间（秒）
+      let timeAlive = 0;
       let bestTime = 0;
       let grazes = 0;
       let bestGrazes = 0;
@@ -124,11 +182,8 @@
 
       let patternTimer = 0;
       let spiralAngle = 0;
-
-      // 自机射击冷却
       let shootCooldown = 0;
 
-      // 擦弹判定圈
       const grazeRadius = 22;
 
       // 炸弹
@@ -136,17 +191,34 @@
       let bombActive = false;
       let bombTimer = 0;
       let bombFlash = 0;
-      const BOMB_DURATION = 120; // 60fps 下约 2 秒
+      const BOMB_DURATION = 120; // 约 2 秒（60fps）
+
+      // 阶段标题显示用
+      let phaseLabelTimer = 0; // 倒计时，用于渐隐
+      let gameOverReason = ""; // "", "hit", "clear"
+
+      function randomDelayForPhase() {
+        return (
+          currentPhase.delayMin +
+          Math.random() * (currentPhase.delayMax - currentPhase.delayMin)
+        );
+      }
 
       function resetBoss() {
         boss.x = width / 2;
         boss.y = 90;
         boss.radius = 26;
-        boss.phase = 1;
-        boss.moveSpeed = 0.8;
-        boss.maxHp = 320;
+        boss.dir = 1;
+        boss.moveSpeed = 0.6;
+        boss.phaseIndex = 0;
+        currentPhase = PHASES[0];
+        boss.maxHp = currentPhase.hp;
         boss.hp = boss.maxHp;
         boss.alive = true;
+      }
+
+      function showPhaseLabel() {
+        phaseLabelTimer = 120; // 大约 2 秒
       }
 
       function resetGame() {
@@ -167,47 +239,18 @@
         bombTimer = 0;
         bombFlash = 0;
 
+        gameOverReason = "";
+
         resetBoss();
+        showPhaseLabel();
+        patternTimer = randomDelayForPhase();
         playing = true;
       }
 
-      // 敌机弹幕生成
-      function spawnCirclePattern(cx, cy) {
-        const count = 24;
-        const baseSpeed = 1.6 + Math.random() * 0.5;
-        for (let i = 0; i < count; i++) {
-          const angle = (i / count) * Math.PI * 2;
-          const speed = baseSpeed + (Math.random() - 0.5) * 0.15;
-          enemyBullets.push(createEnemyBullet(cx, cy, angle, speed));
-        }
-      }
-
-      function spawnFanPattern(cx, cy) {
-        const count = 15;
-        const spread = Math.PI * 0.8; // 扇形角
-        const baseAngle = Math.PI / 2; // 朝下
-        const baseSpeed = 1.8 + Math.random() * 0.6;
-
-        for (let i = 0; i < count; i++) {
-          const t = i / (count - 1) - 0.5;
-          const angle = baseAngle + t * spread;
-          enemyBullets.push(createEnemyBullet(cx, cy, angle, baseSpeed));
-        }
-      }
-
-      function spawnSpiralBurst(cx, cy) {
-        const speed = 1.9;
-        for (let k = 0; k < 3; k++) {
-          const offset = (k * Math.PI * 2) / 3;
-          const angle = spiralAngle + offset;
-          enemyBullets.push(createEnemyBullet(cx, cy, angle, speed));
-        }
-        spiralAngle += 0.3;
-      }
-
+      // 敌机弹：圆形（默认）
       function createEnemyBullet(cx, cy, angle, speed) {
-        const r = 4.5 + Math.random() * 1.8;
-        const hue = 190 + Math.random() * 100; // 蓝青到粉一点
+        const r = 4.5 + Math.random() * 1.4;
+        const hue = 190 + Math.random() * 100;
         return {
           x: cx,
           y: cy,
@@ -218,26 +261,30 @@
           hue,
           alpha: 0.9,
           grazed: false,
+          shape: "circle"
         };
       }
 
-      // 自机子弹
+      // 自机子弹：两行直直向前（不再分叉）
       function shootPlayerBullets() {
         const speed = 5.2;
-        const spread = 0.12; // 双发微微夹角
-        const angles = [-spread, spread];
+        const vx = 0;
+        const vy = -speed;
+        const offset = 5; // 左右各一行
 
-        for (const a of angles) {
-          const angle = -Math.PI / 2 + a; // 朝上略微散
-          const vx = Math.cos(angle) * speed;
-          const vy = Math.sin(angle) * speed;
+        const bullets = [
+          { x: player.x - offset, y: player.y - 4 },
+          { x: player.x + offset, y: player.y - 4 }
+        ];
+
+        for (const p of bullets) {
           playerBullets.push({
-            x: player.x,
-            y: player.y - 6,
+            x: p.x,
+            y: p.y,
             vx,
             vy,
             r: 3,
-            damage: 3,
+            damage: 3
           });
         }
       }
@@ -248,15 +295,268 @@
         bombActive = true;
         bombTimer = BOMB_DURATION;
         bombFlash = 1;
+        enemyBullets.length = 0; // 清屏
+      }
 
-        // 清屏：直接清除所有敌机弹幕
-        enemyBullets.length = 0;
+      // ------------- 各阶段弹幕模式 -------------
+
+      // 非符1：简单星粒圈 + 偶尔掉几颗大星粒
+      function patternNonspell1(cx, cy) {
+        const count = 12;
+        const baseSpeed = 1.0;
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2;
+          const b = createEnemyBullet(
+            cx,
+            cy,
+            angle,
+            baseSpeed + (Math.random() - 0.5) * 0.2
+          );
+          b.r *= 0.85;
+          b.baseR = b.r;
+          enemyBullets.push(b);
+        }
+
+        // 偶尔来一颗稍大一点的中速弹从上往下压
+        if (Math.random() < 0.7) {
+          const x = 40 + Math.random() * (width - 80);
+          const angle = Math.PI / 2;
+          const speed = 1.1 + Math.random() * 0.2;
+          const big = createEnemyBullet(x, cy, angle, speed);
+          big.r *= 1.6;
+          big.baseR = big.r;
+          enemyBullets.push(big);
+        }
+      }
+
+      // 非符2：略窄扇形 + 少量直线落弹
+      function patternNonspell2(cx, cy) {
+        const count = 9;
+        const spread = Math.PI * 0.6;
+        const baseAngle = Math.PI / 2;
+        const baseSpeed = 1.05;
+
+        for (let i = 0; i < count; i++) {
+          const t = i / (count - 1) - 0.5;
+          const angle = baseAngle + t * spread;
+          const b = createEnemyBullet(
+            cx,
+            cy,
+            angle,
+            baseSpeed + (Math.random() - 0.5) * 0.15
+          );
+          b.r *= 0.9;
+          b.baseR = b.r;
+          enemyBullets.push(b);
+        }
+
+        // 两颗慢速直线弹，给一点纵向压迫感
+        for (let k = 0; k < 2; k++) {
+          const x = width * (0.25 + 0.5 * k) + (Math.random() - 0.5) * 30;
+          const angle = Math.PI / 2;
+          const speed = 1.0 + Math.random() * 0.4;
+          const mid = createEnemyBullet(x, cy, angle, speed);
+          mid.r *= 1.2;
+          mid.baseR = mid.r;
+          enemyBullets.push(mid);
+        }
+      }
+
+      // 非符3：简化版螺旋 + 少量雨点
+      function patternNonspell3(cx, cy) {
+        const speed = 1.05;
+        // 两条对称螺旋，子弹不多
+        for (let k = 0; k < 2; k++) {
+          const angle = spiralAngle + k * Math.PI;
+          const b = createEnemyBullet(cx, cy, angle, speed);
+          b.r *= 1.0;
+          b.baseR = b.r;
+          enemyBullets.push(b);
+        }
+        spiralAngle += 0.25;
+
+        // 几颗慢速直落小雨点
+        const drops = 3;
+        for (let i = 0; i < drops; i++) {
+          const x = 40 + Math.random() * (width - 80);
+          const angle = Math.PI / 2;
+          const v = 1.0 + Math.random() * 0.2;
+          const d = createEnemyBullet(x, cy, angle, v);
+          d.r *= 0.8;
+          d.baseR = d.r;
+          enemyBullets.push(d);
+        }
+      }
+
+      // 符1：星符「星粒散射」
+      // 先快后慢的中玉，混合规律小玉和随机大玉
+      function patternSpell1(cx, cy) {
+        const hpRatio = boss.hp / boss.maxHp;
+        const fastPhase = hpRatio > 0.5;
+
+        const midCount = 18;
+        const midBaseSpeed = fastPhase ? 1.6 : 1.0;
+
+        // 中玉环
+        for (let i = 0; i < midCount; i++) {
+          const angle = (i / midCount) * Math.PI * 2;
+          const b = createEnemyBullet(
+            cx,
+            cy,
+            angle,
+            midBaseSpeed + (Math.random() - 0.5) * 0.24
+          );
+          b.r *= 1.5;
+          b.baseR = b.r;
+          enemyBullets.push(b);
+        }
+
+        // 有规律的小玉：向下的窄扇形三列
+        const smallSpread = 0.35;
+        const baseAngle = Math.PI / 2;
+        for (let j = -1; j <= 1; j++) {
+          const angle = baseAngle + j * smallSpread;
+          const sb = createEnemyBullet(
+            cx,
+            cy,
+            angle,
+            1.15 + (fastPhase ? 0.15 : 0)
+          );
+          sb.r *= 0.7;
+          sb.baseR = sb.r;
+          enemyBullets.push(sb);
+        }
+
+        // 无规律的大玉：随机方向几颗
+        const bigCount = fastPhase ? 2 : 3;
+        for (let k = 0; k < bigCount; k++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = fastPhase
+            ? 1.4 + Math.random() * 0.3
+            : 0.9 + Math.random() * 0.25;
+          const big = createEnemyBullet(cx, cy, angle, speed);
+          big.r *= 2.5;
+          big.baseR = big.r;
+          enemyBullets.push(big);
+        }
+      }
+
+      // 矩形弹（风神德感）
+      function spawnRectFan(cx, cy, lanes, speed) {
+        const spread = Math.PI * 0.9;
+        const baseAngle = Math.PI / 2; // 朝下
+        for (let i = 0; i < lanes; i++) {
+          const t = i / (lanes - 1) - 0.5;
+          const angle = baseAngle + t * spread;
+          const vx = Math.cos(angle) * speed;
+          const vy = Math.sin(angle) * speed;
+
+          enemyBullets.push({
+            x: cx,
+            y: cy,
+            vx,
+            vy,
+            w: 12,
+            h: 12,
+            hue: 190 + t * 40,
+            alpha: 0.95,
+            grazed: false,
+            shape: "rect"
+          });
+        }
+      }
+
+      // 符2：星符「星轨轻扇」
+      // 风神德风格：长方形小符弹扇形
+      function patternSpell2(cx, cy) {
+        const hpRatio = boss.hp / boss.maxHp;
+        const lanes = hpRatio > 0.5 ? 8 : 10;
+        const speed = hpRatio > 0.5 ? 1.75 : 1.5;
+        spawnRectFan(cx, cy, lanes, speed);
+
+        // 边缘再加两条略偏一点的子弹轨迹
+        const sideOffset = 60;
+        for (let side = -1; side <= 1; side += 2) {
+          const x = cx + side * sideOffset;
+          const angle = Math.PI / 2 + side * 0.15;
+          const v = speed * 0.95;
+          enemyBullets.push({
+            x,
+            y: cy,
+            vx: Math.cos(angle) * v,
+            vy: Math.sin(angle) * v,
+            w: 5,
+            h: 16,
+            hue: 210 + side * 10,
+            alpha: 0.9,
+            grazed: false,
+            shape: "rect"
+          });
+        }
+      }
+
+      // 终符：缓行螺旋星雨
+      // 慢速但较密的螺旋 + 垂直星雨
+      function patternFinal(cx, cy) {
+        const ringCount = 20;
+        const baseSpeed = 1.0;
+
+        // 螺旋圈
+        for (let i = 0; i < ringCount; i++) {
+          const angle = spiralAngle + (i / ringCount) * Math.PI * 2;
+          const b = createEnemyBullet(cx, cy, angle, baseSpeed);
+          b.r *= 1.1;
+          b.baseR = b.r;
+          enemyBullets.push(b);
+        }
+        spiralAngle += 0.22;
+
+        // 垂直星雨：多条慢速竖直线
+        const lanes = 4;
+        for (let i = 0; i < lanes; i++) {
+          const x =
+            40 +
+            ((width - 80) * (i + 0.5)) / lanes +
+            (Math.random() - 0.5) * 14;
+          const angle = Math.PI / 2;
+          const v = 1.05 + Math.random() * 0.15;
+          const d = createEnemyBullet(x, cy, angle, v);
+          d.r *= 0.85;
+          d.baseR = d.r;
+          enemyBullets.push(d);
+        }
+      }
+
+      // 按当前 phase 触发对应模式
+      function spawnPatternForCurrentPhase() {
+        const cx = boss.x;
+        const cy = boss.y;
+        switch (currentPhase.id) {
+          case "ns1":
+            patternNonspell1(cx, cy);
+            break;
+          case "spell1":
+            patternSpell1(cx, cy);
+            break;
+          case "ns2":
+            patternNonspell2(cx, cy);
+            break;
+          case "spell2":
+            patternSpell2(cx, cy);
+            break;
+          case "ns3":
+            patternNonspell3(cx, cy);
+            break;
+          case "final":
+            patternFinal(cx, cy);
+            break;
+        }
       }
 
       function updateBoss(dt) {
         if (!boss.alive) return;
 
-        // 左右慢慢移动
+        // 左右缓慢移动
         const moveAmount = boss.moveSpeed * dt;
         boss.x += moveAmount * boss.dir;
 
@@ -273,44 +573,15 @@
         // 弹幕模式定时
         patternTimer -= dt;
         if (patternTimer <= 0) {
-          const cx = boss.x;
-          const cy = boss.y;
-
-          const choice = Math.random();
-          if (boss.phase === 1) {
-            // 新手期：圈 + 扇形
-            if (choice < 0.5) {
-              spawnCirclePattern(cx, cy);
-              patternTimer = 42;
-            } else {
-              spawnFanPattern(cx, cy);
-              patternTimer = 36;
-            }
-          } else {
-            // 以后留着扩展更难模式
-            if (choice < 0.4) {
-              spawnCirclePattern(cx, cy);
-              patternTimer = 38;
-            } else if (choice < 0.8) {
-              spawnFanPattern(cx, cy);
-              patternTimer = 30;
-            } else {
-              spawnSpiralBurst(cx, cy);
-              patternTimer = 26;
-            }
-          }
-        } else {
-          // 偶尔插入少量螺旋流，让场面不断档
-          if (patternTimer % 12 < 1.2) {
-            spawnSpiralBurst(boss.x, boss.y);
-          }
+          spawnPatternForCurrentPhase();
+          patternTimer = randomDelayForPhase();
         }
       }
 
       function update(dt) {
         if (!playing) return;
 
-        const speedFactor = dt; // 以 60fps 为基准
+        const speedFactor = dt;
 
         // 自机移动
         let speed = player.baseSpeed * speedFactor;
@@ -321,7 +592,7 @@
         if (keys.up) player.y -= speed;
         if (keys.down) player.y += speed;
 
-        // 边界约束
+        // 边界
         const margin = 12;
         if (player.x < margin) player.x = margin;
         if (player.x > width - margin) player.x = width - margin;
@@ -344,39 +615,51 @@
         // 存活时间
         timeAlive += dt / 60;
 
-        // 射击冷却 & 发射
+        // 阶段标题计时
+        if (phaseLabelTimer > 0) {
+          phaseLabelTimer -= dt;
+          if (phaseLabelTimer < 0) phaseLabelTimer = 0;
+        }
+
+        // 自机射击
         if (shootCooldown > 0) {
           shootCooldown -= dt;
         }
         if (keys.z && shootCooldown <= 0) {
           shootPlayerBullets();
-          shootCooldown = 6; // 约 0.1s 一次
+          shootCooldown = 6; // 大约 0.1 秒一轮
         }
 
-        // 敌机逻辑
+        // Boss / 弹幕
         updateBoss(dt);
 
-        // 更新敌机弹幕：移动 + 擦弹 + 判定
+        // 敌弹更新（移动 + 呼吸 + 擦弹 + 判定）
         for (const b of enemyBullets) {
           b.x += b.vx * speedFactor;
           b.y += b.vy * speedFactor;
 
-          // 呼吸效果
-          const t = timeAlive * 3;
-          b.r = b.baseR * (0.9 + 0.2 * Math.sin(t + b.hue));
+          let size;
+          if (b.shape === "rect") {
+            size = Math.max(b.w, b.h) / 2;
+          } else {
+            const t = timeAlive * 3;
+            b.r = b.baseR * (0.9 + 0.2 * Math.sin(t + b.hue));
+            size = b.r;
+          }
 
           const dx = b.x - player.x;
           const dy = b.y - player.y;
           const dist2 = dx * dx + dy * dy;
 
-          const hitR = player.hitRadius + b.r * 0.8;
+          const hitR = player.hitRadius + size * 0.8;
           const hitR2 = hitR * hitR;
-          const grazeR = grazeRadius + b.r;
+          const grazeR = grazeRadius + size;
           const grazeR2 = grazeR * grazeR;
 
           if (!bombActive && dist2 < hitR2) {
             // 被击中
             playing = false;
+            gameOverReason = "hit";
             bestTime = Math.max(bestTime, timeAlive);
             bestGrazes = Math.max(bestGrazes, grazes);
             break;
@@ -388,12 +671,12 @@
           }
         }
 
-        // 清理飞出画面敌机弹幕
+        // 清理出界弹幕
         for (let i = enemyBullets.length - 1; i >= 0; i--) {
           const b = enemyBullets[i];
           if (
-            b.x < -50 ||
-            b.x > width + 50 ||
+            b.x < -60 ||
+            b.x > width + 60 ||
             b.y < -80 ||
             b.y > height + 80
           ) {
@@ -401,39 +684,57 @@
           }
         }
 
-        // 更新自机子弹 + 打中 boss
+        // 自机子弹
         if (boss.alive) {
           for (let i = playerBullets.length - 1; i >= 0; i--) {
             const pb = playerBullets[i];
             pb.x += pb.vx * speedFactor;
             pb.y += pb.vy * speedFactor;
 
-            // 出界
             if (pb.y < -40 || pb.y > height + 40) {
               playerBullets.splice(i, 1);
               continue;
             }
 
-            // 判定打中 boss
             const dx = pb.x - boss.x;
             const dy = pb.y - boss.y;
             const dist2 = dx * dx + dy * dy;
             const r = boss.radius + pb.r;
+
             if (dist2 < r * r) {
               boss.hp -= pb.damage;
               playerBullets.splice(i, 1);
 
               if (boss.hp <= 0) {
-                boss.alive = false;
-                bestTime = Math.max(bestTime, timeAlive);
-                bestGrazes = Math.max(bestGrazes, grazes);
+                // 当前阶段击破
+                boss.phaseIndex += 1;
+
+                if (boss.phaseIndex < TOTAL_PHASES) {
+                  // 进入下一阶段
+                  currentPhase = PHASES[boss.phaseIndex];
+                  boss.maxHp = currentPhase.hp;
+                  boss.hp = boss.maxHp;
+
+                  enemyBullets.length = 0;
+                  spiralAngle = 0;
+                  patternTimer = 0;
+                  showPhaseLabel();
+                  patternTimer = randomDelayForPhase();
+                } else {
+                  // 所有阶段打完：通关
+                  boss.alive = false;
+                  playing = false;
+                  gameOverReason = "clear";
+                  enemyBullets.length = 0;
+                  bombActive = false;
+                  bestTime = Math.max(bestTime, timeAlive);
+                  bestGrazes = Math.max(bestGrazes, grazes);
+                }
               }
             }
           }
         } else {
-          // boss 死了，等几秒自动复活下一轮
-          // 这里可以做点演出，现在简单一点：
-          // 停止弹幕继续飞，玩家可以按开始重开。
+          // Boss 已被打完，不再生成弹幕
         }
       }
 
@@ -445,13 +746,11 @@
         ctx.fillStyle = grd;
         ctx.fillRect(0, 0, width, height);
 
-        // 半透明遮罩，做一点拖尾感
         ctx.fillStyle = "rgba(15, 23, 42, 0.16)";
         ctx.fillRect(0, 0, width, height);
 
-        // 敌机
+        // Boss
         if (boss.alive) {
-          // 外发光
           const r = boss.radius * 1.8;
           const g = ctx.createRadialGradient(
             boss.x,
@@ -468,13 +767,11 @@
           ctx.arc(boss.x, boss.y, r, 0, Math.PI * 2);
           ctx.fill();
 
-          // 本体
           ctx.beginPath();
           ctx.arc(boss.x, boss.y, boss.radius, 0, Math.PI * 2);
           ctx.fillStyle = "rgba(248, 250, 252, 0.95)";
           ctx.fill();
 
-          // 简单“眼睛”
           ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
           ctx.beginPath();
           ctx.arc(boss.x - 8, boss.y - 4, 3, 0, Math.PI * 2);
@@ -482,7 +779,7 @@
           ctx.fill();
         }
 
-        // 敌机血条
+        // Boss 血条
         if (boss.alive) {
           const barWidth = width - 40;
           const barHeight = 8;
@@ -506,23 +803,31 @@
           ctx.strokeRect(x + 0.5, y + 0.5, barWidth - 1, barHeight - 1);
         }
 
-        // 敌机弹幕
+        // 敌弹
         for (const b of enemyBullets) {
-          const r = b.r * 2;
-          const g = ctx.createRadialGradient(
-            b.x,
-            b.y,
-            0,
-            b.x,
-            b.y,
-            r
-          );
-          g.addColorStop(0, `hsla(${b.hue}, 100%, 75%, ${b.alpha})`);
-          g.addColorStop(1, "rgba(15,23,42,0)");
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
-          ctx.fill();
+          if (b.shape === "rect") {
+            ctx.fillStyle = `hsla(${b.hue}, 100%, 75%, ${b.alpha})`;
+            ctx.fillRect(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h);
+          } else {
+            const r = b.r * 2;
+            const g = ctx.createRadialGradient(
+              b.x,
+              b.y,
+              0,
+              b.x,
+              b.y,
+              r
+            );
+            g.addColorStop(
+              0,
+              `hsla(${b.hue}, 100%, 75%, ${b.alpha})`
+            );
+            g.addColorStop(1, "rgba(15,23,42,0)");
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
 
         // 自机子弹
@@ -533,32 +838,36 @@
           ctx.fill();
         }
 
-        // 自机：外圈、小判定点+机体箭头感
-        // 外圈
+        // 自机
         ctx.beginPath();
         ctx.arc(player.x, player.y, player.drawRadius, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(56, 189, 248, 0.22)";
         ctx.fill();
 
-        // 判定点
         ctx.beginPath();
         ctx.arc(player.x, player.y, player.hitRadius, 0, Math.PI * 2);
         ctx.fillStyle = "#38bdf8";
         ctx.fill();
 
-        // 机体小三角
         ctx.beginPath();
         ctx.moveTo(player.x, player.y - player.drawRadius + 2);
-        ctx.lineTo(player.x - player.drawRadius / 1.4, player.y + player.drawRadius / 1.2);
-        ctx.lineTo(player.x + player.drawRadius / 1.4, player.y + player.drawRadius / 1.2);
+        ctx.lineTo(
+          player.x - player.drawRadius / 1.4,
+          player.y + player.drawRadius / 1.2
+        );
+        ctx.lineTo(
+          player.x + player.drawRadius / 1.4,
+          player.y + player.drawRadius / 1.2
+        );
         ctx.closePath();
         ctx.strokeStyle = "rgba(148, 163, 184, 0.9)";
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // HUD 文本
+        // HUD
         ctx.fillStyle = "#e5e7eb";
-        ctx.font = "13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.font =
+          "13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
         ctx.textAlign = "left";
 
         const timeStr = timeAlive.toFixed(1);
@@ -589,32 +898,74 @@
           ctx.fillRect(0, 0, width, height);
         }
 
-        // 未开始 / 被击中提示
+        // 阶段标题（非符 / 符卡 / 终符）
+        if (boss.alive && phaseLabelTimer > 0) {
+          const alpha = Math.min(1, phaseLabelTimer / 60);
+          ctx.save();
+          ctx.globalAlpha = 0.4 + 0.6 * alpha;
+          ctx.fillStyle = "#e5e7eb";
+          ctx.textAlign = "center";
+          ctx.font =
+            "13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+          ctx.fillText(
+            `Phase ${boss.phaseIndex + 1}/${TOTAL_PHASES}`,
+            width / 2,
+            boss.y + boss.radius + 26
+          );
+          ctx.fillText(
+            currentPhase.title,
+            width / 2,
+            boss.y + boss.radius + 44
+          );
+          ctx.restore();
+        }
+
+        // 结束 / 开始提示
         if (!playing) {
           ctx.fillStyle = "rgba(15,23,42,0.78)";
-          ctx.fillRect(0, height / 2 - 44, width, 88);
+          ctx.fillRect(0, height / 2 - 48, width, 96);
 
           ctx.fillStyle = "#e5e7eb";
           ctx.textAlign = "center";
-          ctx.font = "16px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
-          const msg =
-            timeAlive === 0
-              ? "按“开始 / 重来”进入弹幕练习"
-              : "被击中了！再挑战一把？";
-          ctx.fillText(msg, width / 2, height / 2 - 4);
+          ctx.font =
+            "16px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
 
-          ctx.font = "13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
-          ctx.fillText(
-            "↑↓←→ 移动 · Shift 低速 · Z 射击 · X Bomb",
-            width / 2,
-            height / 2 + 18
-          );
+          let msg;
+          if (timeAlive === 0 && gameOverReason === "") {
+            msg = "按“开始 / 重来”进入弹幕练习";
+          } else if (gameOverReason === "clear") {
+            msg = "STAGE CLEAR! 符卡全破！";
+          } else {
+            msg = "被击中了！再挑战一把？";
+          }
+          ctx.fillText(msg, width / 2, height / 2 - 6);
+
+          ctx.font =
+            "13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+          if (gameOverReason === "clear" && timeAlive > 0) {
+            ctx.fillText(
+              `用时 ${timeStr}s · 擦弹 ${grazes}`,
+              width / 2,
+              height / 2 + 14
+            );
+            ctx.fillText(
+              "↑↓←→ 移动 · Shift 低速 · Z 射击 · X Bomb",
+              width / 2,
+              height / 2 + 34
+            );
+          } else {
+            ctx.fillText(
+              "↑↓←→ 移动 · Shift 低速 · Z 射击 · X Bomb",
+              width / 2,
+              height / 2 + 18
+            );
+          }
         }
       }
 
       function loop(timestamp) {
         if (!lastTime) lastTime = timestamp;
-        const dt = (timestamp - lastTime) / 16.67; // 以 60fps 为基准
+        const dt = (timestamp - lastTime) / 16.67; // 60fps 基准
         lastTime = timestamp;
 
         update(dt);
@@ -622,16 +973,20 @@
         requestAnimationFrame(loop);
       }
 
-      // 键盘事件：拦截方向键滚动、处理 Z / X / Shift
+      // 键盘事件：拦截方向键滚动 + 处理 Z / X / Shift
       window.addEventListener("keydown", (e) => {
         const mapped = keyMap[e.key];
-        if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
-          e.preventDefault(); // 不让页面跟着滚动
+        if (
+          e.key === "ArrowLeft" ||
+          e.key === "ArrowRight" ||
+          e.key === "ArrowUp" ||
+          e.key === "ArrowDown"
+        ) {
+          e.preventDefault();
         }
         if (!mapped) return;
 
         keys[mapped] = true;
-
         if (mapped === "x" && playing) {
           activateBomb();
         }
