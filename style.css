@@ -386,3 +386,81 @@ textarea:focus {
     padding-top: 1.8rem;
   }
 }
+
+/* ====== 背景拉到全屏 & 页脚贴底 ====== */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1; /* 主体区域把中间撑开，页脚乖乖贴底 */
+}
+
+/* ====== 按钮悬停：发光 + 微微抬起 ====== */
+
+.btn {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.55);
+}
+
+.btn-ghost:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: radial-gradient(
+    circle at top,
+    rgba(56, 189, 248, 0.16),
+    rgba(15, 23, 42, 0.95)
+  );
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.8);
+}
+
+/* ====== 卡片悬停：浮起 + 彩色高亮 ====== */
+
+.card,
+.hero-card {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.card:hover,
+.hero-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.85);
+  border-color: var(--accent);
+  background: radial-gradient(
+    circle at top left,
+    rgba(56, 189, 248, 0.22),
+    rgba(129, 140, 248, 0.18),
+    rgba(15, 23, 42, 0.96)
+  );
+}
+
+/* 悬停时把说明文字也点亮一点 */
+.card:hover .card-meta,
+.card:hover .card-desc,
+.hero-card:hover .hero-card-main,
+.hero-card:hover .hero-card-list {
+  color: var(--text-main);
+}
+
