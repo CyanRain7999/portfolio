@@ -484,3 +484,16 @@ main,
   z-index: 1;
 }
 
+/* ====== 留言板区 ====== */
+.comment-section {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* utterances 本身会带自己的样式，这里只管外框布局 */
+.comment-section iframe {
+  width: 100%;
+}
+
+
