@@ -21,13 +21,12 @@
       </nav>
     </div>
   </header>
-
-  <main class="container">
+<main class="container">
     <section>
-      <h1 class="section-title">弹幕生存练习场</h1>
+      <h1 class="section-title">弹幕练习场</h1>
       <p class="section-subtitle">
-        用方向键移动你的机体，按住 Shift 进入低速模式，尽量在弹幕中活得更久。<br />
-        别被打中。
+        操作：↑ ↓ ← → 移动；<br />
+        按住 <strong>Shift</strong> 低速微调，<strong>Z</strong> 连射，<strong>X</strong> Bomb 清屏＋短暂无敌。
       </p>
 
       <div class="game-wrapper">
@@ -41,8 +40,8 @@
         </div>
 
         <p class="section-subtitle" style="margin-top: 0.6rem;">
-          操作：↑ ↓ ← → 移动，<strong>Shift</strong> 低速精确移动。<br />
-          小圆点就是你，彩色弹幕擦着过没撞上会计入擦弹。
+          小圆点就是你，顶部那团光是敌机。<br />
+          存活时间越久越好，擦弹（贴着弹幕走）会计数，Bomb 数有限要省着用。
         </p>
       </div>
     </section>
@@ -57,7 +56,7 @@
   <!-- 粒子背景 -->
   <script src="particles.js"></script>
 
-  <!-- 弹幕游戏脚本 -->
+  <!-- 弹幕 + 自机 / 敌机 + Z 射击 + X 炸弹 -->
   <script>
     (function () {
       const canvas = document.getElementById("game-canvas");
@@ -66,93 +65,147 @@
       const width = canvas.width;
       const height = canvas.height;
 
-      // 玩家（机体）
+      // 自机
       const player = {
         x: width / 2,
         y: height - 70,
-        hitRadius: 4,    // 判定点半径（很小）
-        drawRadius: 9,   // 实际画出来的大小
-        baseSpeed: 3.6,
+        hitRadius: 4,    // 判定点半径
+        drawRadius: 9,   // 外圈显示
+        baseSpeed: 3.8,
       };
 
-      // 输入状态
+      // 键盘状态（统一映射）
       const keys = {
-        ArrowLeft: false,
-        ArrowRight: false,
-        ArrowUp: false,
-        ArrowDown: false,
-        Shift: false,
+        left: false,
+        right: false,
+        up: false,
+        down: false,
+        shift: false,
+        z: false,
+        x: false,
       };
 
-      // 子弹
-      const bullets = [];
+      const keyMap = {
+        ArrowLeft: "left",
+        ArrowRight: "right",
+        ArrowUp: "up",
+        ArrowDown: "down",
+        Shift: "shift",
+        z: "z",
+        Z: "z",
+        x: "x",
+        X: "x",
+      };
+
+      // 敌机（boss 简化版）
+      const boss = {
+        x: width / 2,
+        y: 90,
+        radius: 26,
+        maxHp: 320,
+        hp: 320,
+        dir: 1,
+        moveSpeed: 0.8,
+        phase: 1,
+        alive: true,
+      };
+
+      // 敌机弹幕、自机子弹
+      const enemyBullets = [];
+      const playerBullets = [];
 
       // 游戏状态
       let lastTime = 0;
-      let timeAlive = 0;      // 存活时间（秒）
+      let timeAlive = 0;   // 存活时间（秒）
       let bestTime = 0;
-      let grazes = 0;         // 擦弹次数
+      let grazes = 0;
       let bestGrazes = 0;
       let playing = false;
+
       let patternTimer = 0;
       let spiralAngle = 0;
 
-      // 擦弹判定半径（大于判定点，小于必中的范围）
-      const grazeRadius = 24;
+      // 自机射击冷却
+      let shootCooldown = 0;
+
+      // 擦弹判定圈
+      const grazeRadius = 22;
+
+      // 炸弹
+      let bombs = 3;
+      let bombActive = false;
+      let bombTimer = 0;
+      let bombFlash = 0;
+      const BOMB_DURATION = 120; // 60fps 下约 2 秒
+
+      function resetBoss() {
+        boss.x = width / 2;
+        boss.y = 90;
+        boss.radius = 26;
+        boss.phase = 1;
+        boss.moveSpeed = 0.8;
+        boss.maxHp = 320;
+        boss.hp = boss.maxHp;
+        boss.alive = true;
+      }
 
       function resetGame() {
         player.x = width / 2;
         player.y = height - 70;
-        bullets.length = 0;
+
+        enemyBullets.length = 0;
+        playerBullets.length = 0;
+
         timeAlive = 0;
         grazes = 0;
         patternTimer = 0;
         spiralAngle = 0;
+        shootCooldown = 0;
+
+        bombs = 3;
+        bombActive = false;
+        bombTimer = 0;
+        bombFlash = 0;
+
+        resetBoss();
         playing = true;
       }
 
-      function spawnCirclePattern() {
-        const cx = width / 2;
-        const cy = 90;
-        const count = 26;
-        const baseSpeed = 1.5 + Math.random() * 0.6;
-
+      // 敌机弹幕生成
+      function spawnCirclePattern(cx, cy) {
+        const count = 24;
+        const baseSpeed = 1.6 + Math.random() * 0.5;
         for (let i = 0; i < count; i++) {
           const angle = (i / count) * Math.PI * 2;
-          const speed = baseSpeed + (Math.random() - 0.5) * 0.2;
-          bullets.push(createBullet(cx, cy, angle, speed));
+          const speed = baseSpeed + (Math.random() - 0.5) * 0.15;
+          enemyBullets.push(createEnemyBullet(cx, cy, angle, speed));
         }
       }
 
-      function spawnFanPattern() {
-        const cx = width / 2 + (Math.random() - 0.5) * 80;
-        const cy = 70 + Math.random() * 40;
-        const count = 13;
-        const spread = Math.PI * 0.8; // 扇形角度
+      function spawnFanPattern(cx, cy) {
+        const count = 15;
+        const spread = Math.PI * 0.8; // 扇形角
         const baseAngle = Math.PI / 2; // 朝下
-        const baseSpeed = 1.7 + Math.random() * 0.5;
+        const baseSpeed = 1.8 + Math.random() * 0.6;
 
         for (let i = 0; i < count; i++) {
           const t = i / (count - 1) - 0.5;
           const angle = baseAngle + t * spread;
-          bullets.push(createBullet(cx, cy, angle, baseSpeed));
+          enemyBullets.push(createEnemyBullet(cx, cy, angle, baseSpeed));
         }
       }
 
-      function spawnSpiralPattern() {
-        const cx = width / 2;
-        const cy = 90;
-        const speed = 1.8;
-        // 一次生成两条反向旋转的螺旋
-        for (let k = 0; k < 2; k++) {
-          const offset = k === 0 ? 0 : Math.PI;
+      function spawnSpiralBurst(cx, cy) {
+        const speed = 1.9;
+        for (let k = 0; k < 3; k++) {
+          const offset = (k * Math.PI * 2) / 3;
           const angle = spiralAngle + offset;
-          bullets.push(createBullet(cx, cy, angle, speed));
+          enemyBullets.push(createEnemyBullet(cx, cy, angle, speed));
         }
-        spiralAngle += 0.25;
+        spiralAngle += 0.3;
       }
 
-      function createBullet(cx, cy, angle, speed) {
+      function createEnemyBullet(cx, cy, angle, speed) {
         const r = 4.5 + Math.random() * 1.8;
         const hue = 190 + Math.random() * 100; // 蓝青到粉一点
         return {
@@ -168,73 +221,161 @@
         };
       }
 
+      // 自机子弹
+      function shootPlayerBullets() {
+        const speed = 5.2;
+        const spread = 0.12; // 双发微微夹角
+        const angles = [-spread, spread];
+
+        for (const a of angles) {
+          const angle = -Math.PI / 2 + a; // 朝上略微散
+          const vx = Math.cos(angle) * speed;
+          const vy = Math.sin(angle) * speed;
+          playerBullets.push({
+            x: player.x,
+            y: player.y - 6,
+            vx,
+            vy,
+            r: 3,
+            damage: 3,
+          });
+        }
+      }
+
+      function activateBomb() {
+        if (!playing || bombs <= 0) return;
+        bombs -= 1;
+        bombActive = true;
+        bombTimer = BOMB_DURATION;
+        bombFlash = 1;
+
+        // 清屏：直接清除所有敌机弹幕
+        enemyBullets.length = 0;
+      }
+
+      function updateBoss(dt) {
+        if (!boss.alive) return;
+
+        // 左右慢慢移动
+        const moveAmount = boss.moveSpeed * dt;
+        boss.x += moveAmount * boss.dir;
+
+        const margin = 40;
+        if (boss.x < margin) {
+          boss.x = margin;
+          boss.dir = 1;
+        }
+        if (boss.x > width - margin) {
+          boss.x = width - margin;
+          boss.dir = -1;
+        }
+
+        // 弹幕模式定时
+        patternTimer -= dt;
+        if (patternTimer <= 0) {
+          const cx = boss.x;
+          const cy = boss.y;
+
+          const choice = Math.random();
+          if (boss.phase === 1) {
+            // 新手期：圈 + 扇形
+            if (choice < 0.5) {
+              spawnCirclePattern(cx, cy);
+              patternTimer = 42;
+            } else {
+              spawnFanPattern(cx, cy);
+              patternTimer = 36;
+            }
+          } else {
+            // 以后留着扩展更难模式
+            if (choice < 0.4) {
+              spawnCirclePattern(cx, cy);
+              patternTimer = 38;
+            } else if (choice < 0.8) {
+              spawnFanPattern(cx, cy);
+              patternTimer = 30;
+            } else {
+              spawnSpiralBurst(cx, cy);
+              patternTimer = 26;
+            }
+          }
+        } else {
+          // 偶尔插入少量螺旋流，让场面不断档
+          if (patternTimer % 12 < 1.2) {
+            spawnSpiralBurst(boss.x, boss.y);
+          }
+        }
+      }
+
       function update(dt) {
         if (!playing) return;
 
-        // dt 是相对 60fps 的倍率，防止帧率变化太大
-        const speedFactor = dt;
+        const speedFactor = dt; // 以 60fps 为基准
+
+        // 自机移动
         let speed = player.baseSpeed * speedFactor;
-        if (keys.Shift) {
-          speed *= 0.45; // 低速模式
-        }
+        if (keys.shift) speed *= 0.45;
 
-        if (keys.ArrowLeft) player.x -= speed;
-        if (keys.ArrowRight) player.x += speed;
-        if (keys.ArrowUp) player.y -= speed;
-        if (keys.ArrowDown) player.y += speed;
+        if (keys.left) player.x -= speed;
+        if (keys.right) player.x += speed;
+        if (keys.up) player.y -= speed;
+        if (keys.down) player.y += speed;
 
-        // 边界
+        // 边界约束
         const margin = 12;
         if (player.x < margin) player.x = margin;
         if (player.x > width - margin) player.x = width - margin;
         if (player.y < margin) player.y = margin;
         if (player.y > height - margin) player.y = height - margin;
 
-        // 计时
-        timeAlive += dt / 60; // dt 约等于帧数 -> 换算成秒
-
-        // 弹幕模式定时器：随机轮流放几种 pattern
-        patternTimer -= dt;
-        if (patternTimer <= 0) {
-          const choice = Math.random();
-          if (choice < 0.4) {
-            spawnCirclePattern();
-            patternTimer = 40 + Math.random() * 15;
-          } else if (choice < 0.8) {
-            spawnFanPattern();
-            patternTimer = 32 + Math.random() * 12;
-          } else {
-            // 螺旋会连放几次
-            for (let i = 0; i < 6; i++) {
-              spawnSpiralPattern();
-            }
-            patternTimer = 42 + Math.random() * 18;
-          }
-        } else {
-          // 偶尔插入单发螺旋流，保持场面
-          if (patternTimer % 10 < 1) {
-            spawnSpiralPattern();
+        // 炸弹计时
+        if (bombTimer > 0) {
+          bombTimer -= dt;
+          if (bombTimer <= 0) {
+            bombTimer = 0;
+            bombActive = false;
           }
         }
+        if (bombFlash > 0) {
+          bombFlash -= dt / BOMB_DURATION;
+          if (bombFlash < 0) bombFlash = 0;
+        }
 
-        // 更新弹幕
-        for (const b of bullets) {
+        // 存活时间
+        timeAlive += dt / 60;
+
+        // 射击冷却 & 发射
+        if (shootCooldown > 0) {
+          shootCooldown -= dt;
+        }
+        if (keys.z && shootCooldown <= 0) {
+          shootPlayerBullets();
+          shootCooldown = 6; // 约 0.1s 一次
+        }
+
+        // 敌机逻辑
+        updateBoss(dt);
+
+        // 更新敌机弹幕：移动 + 擦弹 + 判定
+        for (const b of enemyBullets) {
           b.x += b.vx * speedFactor;
           b.y += b.vy * speedFactor;
 
-          // 轻微呼吸效果
+          // 呼吸效果
           const t = timeAlive * 3;
           b.r = b.baseR * (0.9 + 0.2 * Math.sin(t + b.hue));
 
-          // 擦弹判定（判定圈外、擦弹圈内）
           const dx = b.x - player.x;
           const dy = b.y - player.y;
           const dist2 = dx * dx + dy * dy;
-          const hitR2 = (player.hitRadius + b.r) * (player.hitRadius + b.r);
-          const grazeR2 = (grazeRadius + b.r) * (grazeRadius + b.r);
 
-          if (dist2 < hitR2) {
-            // 被打中
+          const hitR = player.hitRadius + b.r * 0.8;
+          const hitR2 = hitR * hitR;
+          const grazeR = grazeRadius + b.r;
+          const grazeR2 = grazeR * grazeR;
+
+          if (!bombActive && dist2 < hitR2) {
+            // 被击中
             playing = false;
             bestTime = Math.max(bestTime, timeAlive);
             bestGrazes = Math.max(bestGrazes, grazes);
@@ -247,35 +388,127 @@
           }
         }
 
-        // 清理飞出画面的弹
-        for (let i = bullets.length - 1; i >= 0; i--) {
-          const b = bullets[i];
+        // 清理飞出画面敌机弹幕
+        for (let i = enemyBullets.length - 1; i >= 0; i--) {
+          const b = enemyBullets[i];
           if (
-            b.x < -40 ||
-            b.x > width + 40 ||
-            b.y < -60 ||
-            b.y > height + 60
+            b.x < -50 ||
+            b.x > width + 50 ||
+            b.y < -80 ||
+            b.y > height + 80
           ) {
-            bullets.splice(i, 1);
+            enemyBullets.splice(i, 1);
           }
+        }
+
+        // 更新自机子弹 + 打中 boss
+        if (boss.alive) {
+          for (let i = playerBullets.length - 1; i >= 0; i--) {
+            const pb = playerBullets[i];
+            pb.x += pb.vx * speedFactor;
+            pb.y += pb.vy * speedFactor;
+
+            // 出界
+            if (pb.y < -40 || pb.y > height + 40) {
+              playerBullets.splice(i, 1);
+              continue;
+            }
+
+            // 判定打中 boss
+            const dx = pb.x - boss.x;
+            const dy = pb.y - boss.y;
+            const dist2 = dx * dx + dy * dy;
+            const r = boss.radius + pb.r;
+            if (dist2 < r * r) {
+              boss.hp -= pb.damage;
+              playerBullets.splice(i, 1);
+
+              if (boss.hp <= 0) {
+                boss.alive = false;
+                bestTime = Math.max(bestTime, timeAlive);
+                bestGrazes = Math.max(bestGrazes, grazes);
+              }
+            }
+          }
+        } else {
+          // boss 死了，等几秒自动复活下一轮
+          // 这里可以做点演出，现在简单一点：
+          // 停止弹幕继续飞，玩家可以按开始重开。
         }
       }
 
       function draw() {
-        // 背景：深色渐变
+        // 背景
         const grd = ctx.createLinearGradient(0, 0, 0, height);
         grd.addColorStop(0, "rgba(15,23,42,1)");
         grd.addColorStop(1, "rgba(15,23,42,0.96)");
         ctx.fillStyle = grd;
         ctx.fillRect(0, 0, width, height);
 
-        // 半透明遮罩，让拖尾更柔和一点
-        ctx.fillStyle = "rgba(15, 23, 42, 0.12)";
+        // 半透明遮罩，做一点拖尾感
+        ctx.fillStyle = "rgba(15, 23, 42, 0.16)";
         ctx.fillRect(0, 0, width, height);
 
-        // 画弹幕（发光小圆点）
-        for (const b of bullets) {
-          const r = b.r * 2.2;
+        // 敌机
+        if (boss.alive) {
+          // 外发光
+          const r = boss.radius * 1.8;
+          const g = ctx.createRadialGradient(
+            boss.x,
+            boss.y,
+            0,
+            boss.x,
+            boss.y,
+            r
+          );
+          g.addColorStop(0, "rgba(251, 113, 133, 0.8)");
+          g.addColorStop(1, "rgba(15, 23, 42, 0)");
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(boss.x, boss.y, r, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 本体
+          ctx.beginPath();
+          ctx.arc(boss.x, boss.y, boss.radius, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(248, 250, 252, 0.95)";
+          ctx.fill();
+
+          // 简单“眼睛”
+          ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+          ctx.beginPath();
+          ctx.arc(boss.x - 8, boss.y - 4, 3, 0, Math.PI * 2);
+          ctx.arc(boss.x + 8, boss.y - 4, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 敌机血条
+        if (boss.alive) {
+          const barWidth = width - 40;
+          const barHeight = 8;
+          const x = 20;
+          const y = 18;
+
+          ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
+          ctx.fillRect(x, y, barWidth, barHeight);
+
+          const ratio = boss.hp / boss.maxHp;
+          const innerWidth = barWidth * Math.max(0, Math.min(1, ratio));
+
+          const bg = ctx.createLinearGradient(x, y, x + barWidth, y);
+          bg.addColorStop(0, "rgba(251, 113, 133, 0.9)");
+          bg.addColorStop(1, "rgba(59, 130, 246, 0.9)");
+          ctx.fillStyle = bg;
+          ctx.fillRect(x, y, innerWidth, barHeight);
+
+          ctx.strokeStyle = "rgba(148, 163, 184, 0.9)";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x + 0.5, y + 0.5, barWidth - 1, barHeight - 1);
+        }
+
+        // 敌机弹幕
+        for (const b of enemyBullets) {
+          const r = b.r * 2;
           const g = ctx.createRadialGradient(
             b.x,
             b.y,
@@ -284,10 +517,7 @@
             b.y,
             r
           );
-          g.addColorStop(
-            0,
-            `hsla(${b.hue}, 100%, 75%, ${b.alpha})`
-          );
+          g.addColorStop(0, `hsla(${b.hue}, 100%, 75%, ${b.alpha})`);
           g.addColorStop(1, "rgba(15,23,42,0)");
           ctx.fillStyle = g;
           ctx.beginPath();
@@ -295,11 +525,19 @@
           ctx.fill();
         }
 
-        // 玩家机体：小判定点 + 外圈
+        // 自机子弹
+        ctx.fillStyle = "#e0f2fe";
+        for (const pb of playerBullets) {
+          ctx.beginPath();
+          ctx.arc(pb.x, pb.y, pb.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 自机：外圈、小判定点+机体箭头感
         // 外圈
         ctx.beginPath();
         ctx.arc(player.x, player.y, player.drawRadius, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(56, 189, 248, 0.18)";
+        ctx.fillStyle = "rgba(56, 189, 248, 0.22)";
         ctx.fill();
 
         // 判定点
@@ -307,6 +545,16 @@
         ctx.arc(player.x, player.y, player.hitRadius, 0, Math.PI * 2);
         ctx.fillStyle = "#38bdf8";
         ctx.fill();
+
+        // 机体小三角
+        ctx.beginPath();
+        ctx.moveTo(player.x, player.y - player.drawRadius + 2);
+        ctx.lineTo(player.x - player.drawRadius / 1.4, player.y + player.drawRadius / 1.2);
+        ctx.lineTo(player.x + player.drawRadius / 1.4, player.y + player.drawRadius / 1.2);
+        ctx.closePath();
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.9)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
 
         // HUD 文本
         ctx.fillStyle = "#e5e7eb";
@@ -316,14 +564,35 @@
         const timeStr = timeAlive.toFixed(1);
         const bestStr = bestTime.toFixed(1);
 
-        ctx.fillText(`Time: ${timeStr}s`, 10, 20);
-        ctx.fillText(`Best: ${bestStr}s`, 10, 38);
-        ctx.fillText(`Grazes: ${grazes}`, 10, 56);
-        ctx.fillText(`Best Grazes: ${bestGrazes}`, 10, 74);
+        ctx.fillText(`Time: ${timeStr}s`, 10, height - 56);
+        ctx.fillText(`Best: ${bestStr}s`, 10, height - 38);
+        ctx.fillText(`Grazes: ${grazes}`, 10, height - 20);
 
+        ctx.textAlign = "right";
+        ctx.fillText(`Best Grazes: ${bestGrazes}`, width - 10, height - 20);
+        ctx.fillText(`Bombs: ${bombs}`, width - 10, height - 38);
+
+        // 炸弹高亮
+        if (bombActive || bombFlash > 0) {
+          const alpha = bombActive ? 0.28 : bombFlash * 0.5;
+          const g = ctx.createRadialGradient(
+            player.x,
+            player.y,
+            0,
+            player.x,
+            player.y,
+            Math.max(width, height)
+          );
+          g.addColorStop(0, `rgba(59, 130, 246, ${alpha})`);
+          g.addColorStop(1, "rgba(15, 23, 42, 0)");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, width, height);
+        }
+
+        // 未开始 / 被击中提示
         if (!playing) {
           ctx.fillStyle = "rgba(15,23,42,0.78)";
-          ctx.fillRect(0, height / 2 - 40, width, 80);
+          ctx.fillRect(0, height / 2 - 44, width, 88);
 
           ctx.fillStyle = "#e5e7eb";
           ctx.textAlign = "center";
@@ -333,14 +602,19 @@
               ? "按“开始 / 重来”进入弹幕练习"
               : "被击中了！再挑战一把？";
           ctx.fillText(msg, width / 2, height / 2 - 4);
+
           ctx.font = "13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
-          ctx.fillText("↑↓←→ 移动 · Shift 低速", width / 2, height / 2 + 18);
+          ctx.fillText(
+            "↑↓←→ 移动 · Shift 低速 · Z 射击 · X Bomb",
+            width / 2,
+            height / 2 + 18
+          );
         }
       }
 
       function loop(timestamp) {
         if (!lastTime) lastTime = timestamp;
-        const dt = (timestamp - lastTime) / 16.67; // 以 60fps 做归一化
+        const dt = (timestamp - lastTime) / 16.67; // 以 60fps 为基准
         lastTime = timestamp;
 
         update(dt);
@@ -348,36 +622,32 @@
         requestAnimationFrame(loop);
       }
 
-           // 输入事件：拦截方向键避免页面滚动
+      // 键盘事件：拦截方向键滚动、处理 Z / X / Shift
       window.addEventListener("keydown", (e) => {
-        if (e.key in keys || e.key === "Shift") {
-          // 阻止浏览器用方向键滚动页面
-          e.preventDefault();
+        const mapped = keyMap[e.key];
+        if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+          e.preventDefault(); // 不让页面跟着滚动
         }
+        if (!mapped) return;
 
-        if (e.key in keys) {
-          keys[e.key] = true;
-        }
-        if (e.key === "Shift") {
-          keys.Shift = true;
+        keys[mapped] = true;
+
+        if (mapped === "x" && playing) {
+          activateBomb();
         }
       });
 
       window.addEventListener("keyup", (e) => {
-        if (e.key in keys) {
-          keys[e.key] = false;
-        }
-        if (e.key === "Shift") {
-          keys.Shift = false;
-        }
+        const mapped = keyMap[e.key];
+        if (!mapped) return;
+        keys[mapped] = false;
       });
-
 
       document.getElementById("start-btn").addEventListener("click", () => {
         resetGame();
       });
 
-      // 初始绘制 + 开始循环
+      // 初始绘制 + 循环
       draw();
       requestAnimationFrame(loop);
     })();
