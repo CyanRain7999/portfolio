@@ -44,8 +44,8 @@
         <textarea id="message" rows="4" placeholder="想对我说点什么？"></textarea>
       </div>
 
-      <button class="btn btn-primary" type="button">
-        暂时只是个按钮 :）
+      <button class="btn btn-primary" type="button" onclick="sendMailFromForm()">
+  用邮箱发送这条留言
       </button>
     </div>
 
@@ -73,6 +73,26 @@
     © 2025 你的名字 · Contact
   </div>
 </footer>
+
+<script>
+    function sendMailFromForm() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const msg = document.getElementById('message').value.trim();
+
+      const to = '18363028368@163.com'; // TODO
+      const subject = '来自个人网站联系页的留言';
+
+      let body = '';
+      if (name) body += `称呼：${name}\n`;
+      if (email) body += `联系邮箱：${email}\n`;
+      if (msg) body += `\n留言内容：\n${msg}`;
+
+      const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = mailto;
+    }
+  </script>
+
 <script src="particles.js"></script>
 </body>
 </html>

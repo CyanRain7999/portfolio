@@ -496,4 +496,18 @@ main,
   width: 100%;
 }
 
+/* ====== 小游戏区域 ====== */
+.game-wrapper {
+  max-width: 520px;
+}
+
+#game-canvas {
+  width: 100%;
+  display: block;
+  border-radius: 0.9rem;
+  background: radial-gradient(circle at top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 1));
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 0.5rem;
+}
+
 
