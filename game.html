@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>小游戏 | 你的名字</title>
+  <title>小游戏 | 月之森的黄瓜架</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -11,7 +11,7 @@
 
   <header class="site-header">
     <div class="container navbar">
-      <a href="index.html" class="logo">YOUR<span>NAME</span></a>
+      <a href="index.html" class="logo">月の森<span>🥒</span></a>
       <nav class="nav-links">
         <a href="index.html" class="nav-link">主页</a>
         <a href="about.html" class="nav-link">关于我</a>
@@ -24,13 +24,15 @@
 
   <main class="container">
     <section>
-      <h1 class="section-title">小小躲避游戏</h1>
+      <h1 class="section-title">弹幕生存练习场</h1>
       <p class="section-subtitle">
-        用方向键移动你的方块，躲开从上面掉下来的障碍，看你能坚持多久！
+        用方向键移动你的机体，按住 Shift 进入低速模式，尽量在弹幕中活得更久。<br />
+        别被打中。
       </p>
 
       <div class="game-wrapper">
-        <canvas id="game-canvas" width="480" height="320"></canvas>
+        <!-- 竖版 STG 比例 -->
+        <canvas id="game-canvas" width="360" height="480"></canvas>
 
         <div class="btn-row" style="margin-top: 0.75rem;">
           <button id="start-btn" class="btn btn-primary" type="button">
@@ -39,8 +41,8 @@
         </div>
 
         <p class="section-subtitle" style="margin-top: 0.6rem;">
-          操作：键盘 ↑ ↓ ← → 移动小方块；<br />
-          灰蓝色小方块是你，斜着掉下来的深色块不要撞上。
+          操作：↑ ↓ ← → 移动，<strong>Shift</strong> 低速精确移动。<br />
+          小圆点就是你，彩色弹幕擦着过没撞上会计入擦弹。
         </p>
       </div>
     </section>
@@ -48,13 +50,14 @@
 
   <footer class="site-footer">
     <div class="container">
-      © 2025 你的名字 · Mini Game
+      © 2025 月之森的黄瓜架 · Bullet Practice
     </div>
   </footer>
 
+  <!-- 粒子背景 -->
   <script src="particles.js"></script>
 
-  <!-- 游戏脚本 -->
+  <!-- 弹幕游戏脚本 -->
   <script>
     (function () {
       const canvas = document.getElementById("game-canvas");
@@ -63,152 +66,281 @@
       const width = canvas.width;
       const height = canvas.height;
 
+      // 玩家（机体）
       const player = {
         x: width / 2,
-        y: height - 40,
-        size: 16,
-        speed: 3.4,
+        y: height - 70,
+        hitRadius: 4,    // 判定点半径（很小）
+        drawRadius: 9,   // 实际画出来的大小
+        baseSpeed: 3.6,
       };
 
+      // 输入状态
       const keys = {
         ArrowLeft: false,
         ArrowRight: false,
         ArrowUp: false,
         ArrowDown: false,
+        Shift: false,
       };
 
-      let obstacles = [];
+      // 子弹
+      const bullets = [];
+
+      // 游戏状态
       let lastTime = 0;
-      let spawnTimer = 0;
-      let score = 0;
-      let bestScore = 0;
+      let timeAlive = 0;      // 存活时间（秒）
+      let bestTime = 0;
+      let grazes = 0;         // 擦弹次数
+      let bestGrazes = 0;
       let playing = false;
+      let patternTimer = 0;
+      let spiralAngle = 0;
+
+      // 擦弹判定半径（大于判定点，小于必中的范围）
+      const grazeRadius = 24;
 
       function resetGame() {
         player.x = width / 2;
-        player.y = height - 40;
-        obstacles = [];
-        spawnTimer = 0;
-        score = 0;
+        player.y = height - 70;
+        bullets.length = 0;
+        timeAlive = 0;
+        grazes = 0;
+        patternTimer = 0;
+        spiralAngle = 0;
         playing = true;
       }
 
-      function spawnObstacle() {
-        const w = 20 + Math.random() * 40;
-        const h = 14 + Math.random() * 26;
-        const x = Math.random() * (width - w);
-        const y = -h - 10;
+      function spawnCirclePattern() {
+        const cx = width / 2;
+        const cy = 90;
+        const count = 26;
+        const baseSpeed = 1.5 + Math.random() * 0.6;
 
-        const speed = 2.2 + Math.random() * 2.0;
-        const drift = (Math.random() - 0.5) * 0.8;
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2;
+          const speed = baseSpeed + (Math.random() - 0.5) * 0.2;
+          bullets.push(createBullet(cx, cy, angle, speed));
+        }
+      }
 
-        obstacles.push({ x, y, w, h, speed, drift });
+      function spawnFanPattern() {
+        const cx = width / 2 + (Math.random() - 0.5) * 80;
+        const cy = 70 + Math.random() * 40;
+        const count = 13;
+        const spread = Math.PI * 0.8; // 扇形角度
+        const baseAngle = Math.PI / 2; // 朝下
+        const baseSpeed = 1.7 + Math.random() * 0.5;
+
+        for (let i = 0; i < count; i++) {
+          const t = i / (count - 1) - 0.5;
+          const angle = baseAngle + t * spread;
+          bullets.push(createBullet(cx, cy, angle, baseSpeed));
+        }
+      }
+
+      function spawnSpiralPattern() {
+        const cx = width / 2;
+        const cy = 90;
+        const speed = 1.8;
+        // 一次生成两条反向旋转的螺旋
+        for (let k = 0; k < 2; k++) {
+          const offset = k === 0 ? 0 : Math.PI;
+          const angle = spiralAngle + offset;
+          bullets.push(createBullet(cx, cy, angle, speed));
+        }
+        spiralAngle += 0.25;
+      }
+
+      function createBullet(cx, cy, angle, speed) {
+        const r = 4.5 + Math.random() * 1.8;
+        const hue = 190 + Math.random() * 100; // 蓝青到粉一点
+        return {
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r,
+          baseR: r,
+          hue,
+          alpha: 0.9,
+          grazed: false,
+        };
       }
 
       function update(dt) {
         if (!playing) return;
 
-        // 移动玩家
-        const move = player.speed * dt;
-        if (keys.ArrowLeft) player.x -= move;
-        if (keys.ArrowRight) player.x += move;
-        if (keys.ArrowUp) player.y -= move;
-        if (keys.ArrowDown) player.y += move;
-
-        // 边界约束
-        const s = player.size;
-        if (player.x < s) player.x = s;
-        if (player.x > width - s) player.x = width - s;
-        if (player.y < s) player.y = s;
-        if (player.y > height - s) player.y = height - s;
-
-        // 生成障碍
-        spawnTimer += dt;
-        if (spawnTimer > 25) {
-          spawnTimer = 0;
-          spawnObstacle();
+        // dt 是相对 60fps 的倍率，防止帧率变化太大
+        const speedFactor = dt;
+        let speed = player.baseSpeed * speedFactor;
+        if (keys.Shift) {
+          speed *= 0.45; // 低速模式
         }
 
-        // 更新障碍位置
-        obstacles.forEach((o) => {
-          o.y += o.speed * dt;
-          o.x += o.drift * dt;
-        });
+        if (keys.ArrowLeft) player.x -= speed;
+        if (keys.ArrowRight) player.x += speed;
+        if (keys.ArrowUp) player.y -= speed;
+        if (keys.ArrowDown) player.y += speed;
 
-        // 删除出界障碍 & 加分
-        obstacles = obstacles.filter((o) => {
-          if (o.y > height + 40) {
-            score += 1;
-            return false;
+        // 边界
+        const margin = 12;
+        if (player.x < margin) player.x = margin;
+        if (player.x > width - margin) player.x = width - margin;
+        if (player.y < margin) player.y = margin;
+        if (player.y > height - margin) player.y = height - margin;
+
+        // 计时
+        timeAlive += dt / 60; // dt 约等于帧数 -> 换算成秒
+
+        // 弹幕模式定时器：随机轮流放几种 pattern
+        patternTimer -= dt;
+        if (patternTimer <= 0) {
+          const choice = Math.random();
+          if (choice < 0.4) {
+            spawnCirclePattern();
+            patternTimer = 40 + Math.random() * 15;
+          } else if (choice < 0.8) {
+            spawnFanPattern();
+            patternTimer = 32 + Math.random() * 12;
+          } else {
+            // 螺旋会连放几次
+            for (let i = 0; i < 6; i++) {
+              spawnSpiralPattern();
+            }
+            patternTimer = 42 + Math.random() * 18;
           }
-          return true;
-        });
+        } else {
+          // 偶尔插入单发螺旋流，保持场面
+          if (patternTimer % 10 < 1) {
+            spawnSpiralPattern();
+          }
+        }
 
-        // 碰撞检测
-        for (const o of obstacles) {
-          if (
-            player.x + s > o.x &&
-            player.x - s < o.x + o.w &&
-            player.y + s > o.y &&
-            player.y - s < o.y + o.h
-          ) {
+        // 更新弹幕
+        for (const b of bullets) {
+          b.x += b.vx * speedFactor;
+          b.y += b.vy * speedFactor;
+
+          // 轻微呼吸效果
+          const t = timeAlive * 3;
+          b.r = b.baseR * (0.9 + 0.2 * Math.sin(t + b.hue));
+
+          // 擦弹判定（判定圈外、擦弹圈内）
+          const dx = b.x - player.x;
+          const dy = b.y - player.y;
+          const dist2 = dx * dx + dy * dy;
+          const hitR2 = (player.hitRadius + b.r) * (player.hitRadius + b.r);
+          const grazeR2 = (grazeRadius + b.r) * (grazeRadius + b.r);
+
+          if (dist2 < hitR2) {
+            // 被打中
             playing = false;
-            bestScore = Math.max(bestScore, score);
+            bestTime = Math.max(bestTime, timeAlive);
+            bestGrazes = Math.max(bestGrazes, grazes);
             break;
+          }
+
+          if (!b.grazed && dist2 >= hitR2 && dist2 < grazeR2) {
+            b.grazed = true;
+            grazes += 1;
+          }
+        }
+
+        // 清理飞出画面的弹
+        for (let i = bullets.length - 1; i >= 0; i--) {
+          const b = bullets[i];
+          if (
+            b.x < -40 ||
+            b.x > width + 40 ||
+            b.y < -60 ||
+            b.y > height + 60
+          ) {
+            bullets.splice(i, 1);
           }
         }
       }
 
       function draw() {
-        ctx.clearRect(0, 0, width, height);
-
-        // 背景
+        // 背景：深色渐变
         const grd = ctx.createLinearGradient(0, 0, 0, height);
-        grd.addColorStop(0, "rgba(15,23,42,0.9)");
-        grd.addColorStop(1, "rgba(15,23,42,1)");
+        grd.addColorStop(0, "rgba(15,23,42,1)");
+        grd.addColorStop(1, "rgba(15,23,42,0.96)");
         ctx.fillStyle = grd;
         ctx.fillRect(0, 0, width, height);
 
-        // 画玩家
+        // 半透明遮罩，让拖尾更柔和一点
+        ctx.fillStyle = "rgba(15, 23, 42, 0.12)";
+        ctx.fillRect(0, 0, width, height);
+
+        // 画弹幕（发光小圆点）
+        for (const b of bullets) {
+          const r = b.r * 2.2;
+          const g = ctx.createRadialGradient(
+            b.x,
+            b.y,
+            0,
+            b.x,
+            b.y,
+            r
+          );
+          g.addColorStop(
+            0,
+            `hsla(${b.hue}, 100%, 75%, ${b.alpha})`
+          );
+          g.addColorStop(1, "rgba(15,23,42,0)");
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 玩家机体：小判定点 + 外圈
+        // 外圈
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.drawRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(56, 189, 248, 0.18)";
+        ctx.fill();
+
+        // 判定点
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.hitRadius, 0, Math.PI * 2);
         ctx.fillStyle = "#38bdf8";
-        ctx.fillRect(
-          player.x - player.size,
-          player.y - player.size,
-          player.size * 2,
-          player.size * 2
-        );
+        ctx.fill();
 
-        // 画障碍
-        ctx.fillStyle = "rgba(148, 163, 184, 0.95)";
-        obstacles.forEach((o) => {
-          ctx.fillRect(o.x, o.y, o.w, o.h);
-        });
-
-        // 文本
+        // HUD 文本
         ctx.fillStyle = "#e5e7eb";
         ctx.font = "13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
-        ctx.fillText(`Score: ${score}`, 12, 20);
-        ctx.fillText(`Best: ${bestScore}`, 12, 38);
+        ctx.textAlign = "left";
+
+        const timeStr = timeAlive.toFixed(1);
+        const bestStr = bestTime.toFixed(1);
+
+        ctx.fillText(`Time: ${timeStr}s`, 10, 20);
+        ctx.fillText(`Best: ${bestStr}s`, 10, 38);
+        ctx.fillText(`Grazes: ${grazes}`, 10, 56);
+        ctx.fillText(`Best Grazes: ${bestGrazes}`, 10, 74);
 
         if (!playing) {
-          ctx.fillStyle = "rgba(15,23,42,0.75)";
-          ctx.fillRect(0, height / 2 - 26, width, 48);
+          ctx.fillStyle = "rgba(15,23,42,0.78)";
+          ctx.fillRect(0, height / 2 - 40, width, 80);
 
           ctx.fillStyle = "#e5e7eb";
-          ctx.font = "16px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
           ctx.textAlign = "center";
-          ctx.fillText(
-            score === 0 ? "按“开始 / 重来”开始游戏" : "撞啦！再来一局？",
-            width / 2,
-            height / 2
-          );
-          ctx.textAlign = "left";
+          ctx.font = "16px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+          const msg =
+            timeAlive === 0
+              ? "按“开始 / 重来”进入弹幕练习"
+              : "被击中了！再挑战一把？";
+          ctx.fillText(msg, width / 2, height / 2 - 4);
+          ctx.font = "13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+          ctx.fillText("↑↓←→ 移动 · Shift 低速", width / 2, height / 2 + 18);
         }
       }
 
       function loop(timestamp) {
         if (!lastTime) lastTime = timestamp;
-        const dt = (timestamp - lastTime) / 16.67; // 约等于帧数归一化
+        const dt = (timestamp - lastTime) / 16.67; // 以 60fps 做归一化
         lastTime = timestamp;
 
         update(dt);
@@ -216,9 +348,18 @@
         requestAnimationFrame(loop);
       }
 
+           // 输入事件：拦截方向键避免页面滚动
       window.addEventListener("keydown", (e) => {
+        if (e.key in keys || e.key === "Shift") {
+          // 阻止浏览器用方向键滚动页面
+          e.preventDefault();
+        }
+
         if (e.key in keys) {
           keys[e.key] = true;
+        }
+        if (e.key === "Shift") {
+          keys.Shift = true;
         }
       });
 
@@ -226,13 +367,17 @@
         if (e.key in keys) {
           keys[e.key] = false;
         }
+        if (e.key === "Shift") {
+          keys.Shift = false;
+        }
       });
+
 
       document.getElementById("start-btn").addEventListener("click", () => {
         resetGame();
       });
 
-      // 初次绘制
+      // 初始绘制 + 开始循环
       draw();
       requestAnimationFrame(loop);
     })();
