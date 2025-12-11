@@ -5,17 +5,16 @@
 // 一个全局对象，两个部分：packs（卡包列表）+ cards（每个卡包里的卡牌列表）
 const CARD_GAME = {
   packs: [
-    {
-      id: "royalist-lv1",
-      name: "保皇党",
-      subtitle: "本篇 · 基础卡组",
-      side: "保皇党",
-      era: "主世界 · 一代",
-      status: "released", // released / wip / planned
-      description:
-        "以稳扎稳打的防御与资源运作为核心的基础卡组，是整个体系的起点。",
-      note: ""
-    },
+{
+  id: "royal",
+  name: "保皇党",
+  subtitle: "本篇·基础卡组",
+  side: "保皇党",
+  era: "主世界",
+  status: "released",
+  description: "在这里写一句对「保皇党」的介绍。",
+  note: ""
+},
     {
       id: "rebel-lv1",
       name: "起义军",
@@ -62,51 +61,6 @@ const CARD_GAME = {
       note: ""
     }
   ],
-
-  // cards 里按“卡包 id”分组
-  // 暂时做一个示例结构，你可以照着往里填 Excel 里的实际卡牌
-  cards: {
-    "royalist-lv1": [
-      {
-        code: "RL1-0101",
-        name: "示例：宫廷侍从",
-        type: "单位",
-        cost: "2",
-        role: "保皇党",
-        tags: ["基础", "支援"],
-        text: "【示例效果】当你部署此单位时，可以为一个友方单位提供小幅防御加成。",
-        note: "这里只是示例卡，真正数据请以后替换为 Excel 中的实际单卡。"
-      },
-      {
-        code: "RL1-0102",
-        name: "示例：王室诏令",
-        type: "事件",
-        cost: "1",
-        role: "保皇党",
-        tags: ["指令"],
-        text: "【示例效果】本回合内，你的下一个单位费用减少 1。",
-        note: ""
-      }
-    ],
-
-    "rebel-lv1": [
-      {
-        code: "RB1-01",
-        name: "示例：街巷煽动者",
-        type: "单位",
-        cost: "1",
-        role: "起义军",
-        tags: ["速攻"],
-        text: "【示例效果】登场时对对方造成少量扰乱效果。",
-        note: ""
-      }
-    ],
-
-    // 其他卡包暂时为空数组，等你有心情慢慢补
-    "new-faith-dlc1": [],
-    "forest-spirits-dlc1": [],
-    "placeholder-next-pack": []
-  }
 };
 
 window.CARD_GAME = CARD_GAME;

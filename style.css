@@ -418,6 +418,60 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.6);
 }
 
+/* 等级边框样式：根据 lv1 / lv2 / lv3 tag 来变 */
+
+.card-item.card-lv1 {
+  border-color: rgba(148, 163, 184, 0.8); /* 稍微深一点的灰框 */
+}
+
+.card-item.card-lv2 {
+  border-color: rgba(59, 122, 87, 0.85); /* 森林绿 */
+  box-shadow: 0 12px 28px rgba(59, 122, 87, 0.28);
+}
+
+.card-item.card-lv3 {
+  border-color: rgba(30, 64, 175, 0.9); /* 更强烈一点的蓝 */
+  box-shadow: 0 14px 34px rgba(30, 64, 175, 0.3);
+}
+
+/* 卡牌类别配色：根据 category（政策/装备/单位）来变底色 */
+
+.card-item.card-type-policy {
+  background: linear-gradient(
+      135deg,
+      rgba(254, 249, 195, 0.7),
+      rgba(254, 243, 199, 0.95)
+    );
+}
+
+.card-item.card-type-attach {
+  background: linear-gradient(
+      135deg,
+      rgba(219, 234, 254, 0.7),
+      rgba(191, 219, 254, 0.95)
+    );
+}
+
+.card-item.card-type-unit,
+.card-item.card-type-unit-core,
+.card-item.card-type-unit-merc {
+  background: linear-gradient(
+      135deg,
+      rgba(209, 250, 229, 0.7),
+      rgba(187, 247, 208, 0.97)
+    );
+}
+
+/* 核心单位 / 雇佣单位 再做一点点区分 */
+
+.card-item.card-type-unit-core {
+  border-width: 2px;
+}
+
+.card-item.card-type-unit-merc {
+  border-style: dashed;
+}
+
 .card-item-header {
   display: flex;
   align-items: center;
@@ -577,6 +631,39 @@ body {
   .card-gen-grid {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
   }
+}
+
+/* 通用过渡：卡包 card + 单卡 card */
+.boardgame-pack-card,
+.card-item {
+  position: relative;
+  transition:
+    transform 0.18s ease-out,
+    box-shadow 0.18s ease-out,
+    border-color 0.18s ease-out,
+    filter 0.18s ease-out,
+    background 0.18s ease-out;
+}
+
+/* 卡包列表：hover 上浮 + 光感加强 */
+.boardgame-pack-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 55px rgba(15, 23, 42, 0.2);
+  border-color: rgba(59, 122, 87, 0.9); /* 森林绿一点，让它看起来更“选中” */
+}
+
+/* 占位卡包：动画弱一点，不和真卡包抢风头 */
+.boardgame-pack-card.boardgame-pack-card--placeholder:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+  border-color: rgba(148, 163, 184, 0.75);
+}
+
+/* 单卡：hover 上浮 + 微微提亮 */
+.card-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.24);
+  filter: brightness(1.03);
 }
 
 

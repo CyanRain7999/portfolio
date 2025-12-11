@@ -295,7 +295,11 @@
       }
 
       const lines = [];
-      lines.push(`"${esc(packId)}": [`);
+      lines.push(`// data/cards-${esc(packId)}.js`);
+      lines.push(`// ${packName} 的单卡数据（由 card-gen 生成，你可以再手工微调）`);
+      lines.push("");
+      lines.push("window.CARD_PACK_CARDS = [");
+
       cardObjects.forEach((card, idx) => {
         const tagArray =
           card.tags && card.tags.length
@@ -315,15 +319,15 @@
         if (card.text) {
           lines.push(`    text: "${esc(card.text)}"`);
         } else {
-          // 去掉最后一个逗号
+          // 如果没有 text，把最后一行多余的逗号干掉
           if (lines[lines.length - 1].trim().endsWith(",")) {
             lines[lines.length - 1] = lines[lines.length - 1].replace(/,+\s*$/, "");
           }
         }
-        // 如果 text 为空但前一行有逗号也处理过了
         lines.push(idx === cardObjects.length - 1 ? "  }" : "  },");
       });
-      lines.push("],");
+
+      lines.push("];");
 
       cardsOutput.value = lines.join("\n");
     }

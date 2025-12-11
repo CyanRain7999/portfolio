@@ -31,127 +31,227 @@
     </footer>
   </div>
 
-  <script src="boardgame-data.js"></script>
-  <script src="portfolio-particles.js"></script>
-  <script>
-    function getQueryParam(name) {
-      const params = new URLSearchParams(window.location.search);
-      return params.get(name);
+<script src="boardgame-data.js"></script>
+<script src="portfolio-particles.js"></script>
+<script>
+  function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+  }
+
+  // 根据 tags 中的 lv1/lv2/lv3 + type 推导 CSS class
+  function getCardClasses(card) {
+    const tags = (card.tags || []).map((t) =>
+      String(t || "").toLowerCase()
+    );
+    const type = String(card.type || "").toLowerCase();
+
+    let levelClass = "";
+    if (tags.includes("lv1")) levelClass = " card-lv1";
+    else if (tags.includes("lv2")) levelClass = " card-lv2";
+    else if (tags.includes("lv3")) levelClass = " card-lv3";
+
+    let typeClass = "";
+    if (type.includes("政策")) {
+      typeClass = " card-type-policy";
+    } else if (type.includes("装") || type.includes("装备")) {
+      typeClass = " card-type-attach";
+    } else if (type.includes("单位")) {
+      if (type.includes("核心")) {
+        typeClass = " card-type-unit-core";
+      } else if (type.includes("雇佣")) {
+        typeClass = " card-type-unit-merc";
+      } else {
+        typeClass = " card-type-unit";
+      }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const packId = getQueryParam("id");
-      const root = document.getElementById("pack-page-root");
+    return `card-item${levelClass}${typeClass}`;
+  }
 
-      if (!packId || !window.CARD_GAME) {
-        root.innerHTML = `
-          <section class="boardgame-pack-hero">
-            <h1 class="hero-title">未找到卡包</h1>
-            <p class="hero-subtitle">
-              链接似乎缺少参数，或者该卡包尚未收录。
-            </p>
-            <p>
-              <a href="boardgame.html" class="btn btn-primary btn-compact">返回卡包列表</a>
-            </p>
-          </section>
-        `;
-        return;
+  // 动态加载 data/cards-<packId>.js
+  function loadPackCards(packId, onSuccess, onError) {
+    const script = document.createElement("script");
+    script.src = `data/cards-${encodeURIComponent(packId)}.js`;
+    script.async = true;
+
+    script.onload = function () {
+      const cards = window.CARD_PACK_CARDS;
+      if (Array.isArray(cards)) {
+        onSuccess(cards);
+      } else {
+        onError &&
+          onError(new Error("CARD_PACK_CARDS 未定义或不是数组。"));
       }
+      // 用完可以清掉，避免污染（其实这一页不会重复用）
+      // delete window.CARD_PACK_CARDS;
+    };
 
-      const pack = CARD_GAME.packs.find((p) => p.id === packId);
+    script.onerror = function () {
+      onError &&
+        onError(
+          new Error(
+            `无法加载 data/cards-${packId}.js，请确认文件是否存在。`
+          )
+        );
+    };
 
-      if (!pack) {
-        root.innerHTML = `
-          <section class="boardgame-pack-hero">
-            <h1 class="hero-title">未找到卡包</h1>
-            <p class="hero-subtitle">
-              没有找到 ID 为 <code>${packId}</code> 的卡包，请确认链接或数据文件。
-            </p>
-            <p>
-              <a href="boardgame.html" class="btn btn-primary btn-compact">返回卡包列表</a>
-            </p>
-          </section>
-        `;
-        return;
-      }
+    document.head.appendChild(script);
+  }
 
-      const cards = CARD_GAME.cards[pack.id] || [];
+  document.addEventListener("DOMContentLoaded", () => {
+    const packId = getQueryParam("id");
+    const root = document.getElementById("pack-page-root");
 
-      const badgeText =
-        pack.status === "released"
-          ? "已收录"
-          : pack.status === "wip"
-          ? "整理中"
-          : pack.status === "planned"
-          ? "计划中"
-          : "预留空位";
-
-      const heroHTML = `
+    if (!packId || !window.CARD_GAME) {
+      root.innerHTML = `
         <section class="boardgame-pack-hero">
-          <p class="eyebrow">Card Pack Detail</p>
-          <h1 class="hero-title">${pack.name}</h1>
-          <p class="boardgame-pack-meta">
-            <span class="pack-badge">${badgeText}</span>
-            ${
-              pack.subtitle
-                ? `<span class="dot-sep">·</span><span>${pack.subtitle}</span>`
-                : ""
-            }
-          </p>
+          <h1 class="hero-title">未找到卡包</h1>
           <p class="hero-subtitle">
-            ${pack.description || ""}
+            链接似乎缺少参数，或者该卡包尚未收录。
           </p>
-          ${
-            pack.era || pack.side
-              ? `<p class="boardgame-pack-meta">
-                  ${pack.side ? `<span>${pack.side}</span>` : ""}
-                  ${
-                    pack.era
-                      ? `<span class="dot-sep">·</span><span>${pack.era}</span>`
-                      : ""
-                  }
-                </p>`
-              : ""
-          }
-          ${
-            pack.note
-              ? `<p class="boardgame-pack-note">${pack.note}</p>`
-              : ""
-          }
+          <p>
+            <a href="boardgame.html" class="btn btn-primary btn-compact">返回卡包列表</a>
+          </p>
         </section>
       `;
+      return;
+    }
 
-      let cardsHTML = "";
+    const pack = CARD_GAME.packs.find((p) => p.id === packId);
 
-      if (!cards.length) {
-        cardsHTML = `
-          <section class="card-list-section">
-            <h2 class="section-title">单卡列表</h2>
+    if (!pack) {
+      root.innerHTML = `
+        <section class="boardgame-pack-hero">
+          <h1 class="hero-title">未找到卡包</h1>
+          <p class="hero-subtitle">
+            没有找到 ID 为 <code>${packId}</code> 的卡包，请确认链接或数据文件。
+          </p>
+          <p>
+            <a href="boardgame.html" class="btn btn-primary btn-compact">返回卡包列表</a>
+          </p>
+        </section>
+      `;
+      return;
+    }
+
+    const badgeText =
+      pack.status === "released"
+        ? "已收录"
+        : pack.status === "wip"
+        ? "整理中"
+        : pack.status === "planned"
+        ? "计划中"
+        : "预留空位";
+
+    const heroHTML = `
+      <section class="boardgame-pack-hero">
+        <p class="eyebrow">Card Pack Detail</p>
+        <h1 class="hero-title">${pack.name}</h1>
+        <p class="boardgame-pack-meta">
+          <span class="pack-badge">${badgeText}</span>
+          ${
+            pack.subtitle
+              ? `<span class="dot-sep">·</span><span>${pack.subtitle}</span>`
+              : ""
+          }
+        </p>
+        <p class="hero-subtitle">
+          ${pack.description || ""}
+        </p>
+        ${
+          pack.era || pack.side
+            ? `<p class="boardgame-pack-meta">
+                ${pack.side ? `<span>${pack.side}</span>` : ""}
+                ${
+                  pack.era
+                    ? `<span class="dot-sep">·</span><span>${pack.era}</span>`
+                    : ""
+                }
+              </p>`
+            : ""
+        }
+        ${
+          pack.note
+            ? `<p class="boardgame-pack-note">${pack.note}</p>`
+            : ""
+        }
+      </section>
+    `;
+
+    const backHTML = `
+      <section class="card-list-section">
+        <p>
+          <a href="boardgame.html" class="btn btn-ghost btn-compact">
+            ← 返回卡包总览
+          </a>
+        </p>
+      </section>
+    `;
+
+    // 先画出头部 + 占位的“正在载入”区域
+    root.innerHTML =
+      heroHTML +
+      `
+      <section class="card-list-section">
+        <h2 class="section-title">单卡列表</h2>
+        <div id="cards-container">
+          <p class="section-subtitle">
+            正在载入单卡数据……
+          </p>
+        </div>
+      </section>
+    ` +
+      backHTML;
+
+    const cardsContainer = document.getElementById("cards-container");
+
+    // 再去动态加载 data/cards-<packId>.js
+    loadPackCards(
+      packId,
+      function (cards) {
+        if (!cards || !cards.length) {
+          cardsContainer.innerHTML = `
             <p class="section-subtitle">
               这个卡包的具体单卡条目还在整理中。
               <br />
-             
+              可以稍后在 <code>data/cards-${packId}.js</code> 中补上 Excel 导出的数据。
             </p>
-          </section>
-        `;
-      } else {
+          `;
+          return;
+        }
+
         const cardItemsHTML = cards
           .map((card) => {
+            const cardClass = getCardClasses(card);
             const tagStr = (card.tags || []).join(" · ");
+
+            const countPart = card.count
+              ? `<span class="dot-sep">·</span><span>数量 ${card.count}</span>`
+              : "";
+
+            const statsStr = (card.stats || "").trim();
+            const statsPart =
+              statsStr && statsStr !== "0"
+                ? `<span class="dot-sep">·</span><span>${statsStr}</span>`
+                : "";
+
             return `
-              <article class="card-item">
+              <article class="${cardClass}">
                 <header class="card-item-header">
-                  <div class="card-item-code">${card.code || ""}</div>
-                  <h3 class="card-item-name">${card.name || "未命名卡牌"}</h3>
+                  ${
+                    card.code
+                      ? `<div class="card-item-code">${card.code}</div>`
+                      : ""
+                  }
+                  <h3 class="card-item-name">${
+                    card.name || "未命名卡牌"
+                  }</h3>
                 </header>
                 <p class="card-item-meta">
                   <span>${card.type || "类型未标注"}</span>
-                  ${
-    		    card.atkHp && card.atkHp !== "0"
-                      ? `<span class="dot-sep">·</span><span>ATK/HP ${card.atkHp}</span>`
-                      : ""
-                  }
-
+                  ${countPart}
+                  ${statsPart}
                   ${
                     card.role
                       ? `<span class="dot-sep">·</span><span>${card.role}</span>`
@@ -168,38 +268,29 @@
                     ? `<p class="card-item-text">${card.text}</p>`
                     : ""
                 }
-                ${
-                  card.note
-                    ? `<p class="card-item-note">备注：${card.note}</p>`
-                    : ""
-                }
               </article>
             `;
           })
           .join("");
 
-        cardsHTML = `
-          <section class="card-list-section">
-            <h2 class="section-title">单卡列表</h2>
-            <div class="card-list-grid">
-              ${cardItemsHTML}
-            </div>
-          </section>
+        cardsContainer.innerHTML = `
+          <div class="card-list-grid">
+            ${cardItemsHTML}
+          </div>
+        `;
+      },
+      function (err) {
+        console.error(err);
+        cardsContainer.innerHTML = `
+          <p class="section-subtitle">
+            未找到该卡包的单卡数据文件：
+            <br />
+            <code>data/cards-${packId}.js</code>
+            <br />
+            可以稍后新建这个文件，并在其中定义 <code>window.CARD_PACK_CARDS = [ ... ]</code>。
+          </p>
         `;
       }
-
-      const backHTML = `
-        <section class="card-list-section">
-          <p>
-            <a href="boardgame.html" class="btn btn-ghost btn-compact">
-              ← 返回卡包总览
-            </a>
-          </p>
-        </section>
-      `;
-
-      root.innerHTML = heroHTML + cardsHTML + backHTML;
-    });
-  </script>
-</body>
-</html>
+    );
+  });
+</script>
