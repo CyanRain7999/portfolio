@@ -971,3 +971,33 @@ a.rule-card {
 }
 
 
+/* ====== 桌游页 · 制作工具小角落 ====== */
+
+.boardgame-tools {
+  margin-bottom: 0.9rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.boardgame-tools-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px dashed rgba(148, 163, 184, 0.8);
+}
+
+.boardgame-tools-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* 超小号按钮（如果之前没有定义过 .btn-xxs，就加这一段） */
+.btn-xxs {
+  padding: 0.16rem 0.48rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
