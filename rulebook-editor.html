@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>规则书编辑器 | 月之森的黄瓜架</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="index.html" class="logo">月の森<span>🥒</span></a>
+        <nav class="nav-links">
+          <a href="boardgame.html" class="nav-link">桌游卡包</a>
+          <a href="boardgame-reference.html" class="nav-link">规则与词条</a>
+          <a href="index.html" class="nav-link">资料馆首页</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container boardgame-ref-main">
+      <section class="hero">
+        <p class="eyebrow">Tools · Rulebook Editor</p>
+        <h1 class="hero-title">规则书编辑器</h1>
+        <p class="hero-subtitle">
+          在这里按章节编辑完整规则书的正文，编辑完后一键生成 <code>boardgame-rules.html</code> 文件并下载。
+          <br />
+          你只需要把下载好的文件上传覆盖原有页面，就完成了一次线上改版。
+        </p>
+      </section>
+
+      <section class="boardgame-ref-grid">
+        <div class="boardgame-ref-panel">
+          <h2 class="section-title small">章节内容</h2>
+          <p class="section-subtitle">
+            每一块对应规则书里的一个大章节。章节内可以添加多段正文，每段会变成一个独立的段落。
+          </p>
+
+          <div id="sections-container" class="rules-editor-sections">
+            <!-- 章节编辑区由 JS 初始化 -->
+          </div>
+
+          <button id="add-section-btn" class="btn btn-ghost btn-compact" type="button">
+            ＋ 新建章节
+          </button>
+        </div>
+
+        <div class="boardgame-ref-panel">
+          <h2 class="section-title small">导出规则书 HTML</h2>
+          <p class="section-subtitle">
+            点击下面的按钮，会根据当前填写的内容生成完整的
+            <code>boardgame-rules.html</code> 文件并触发下载。
+          </p>
+
+          <button id="export-btn" class="btn btn-primary" type="button">
+            导出并下载规则书 HTML
+          </button>
+
+          <p class="section-subtitle" style="margin-top: 0.75rem;">
+            下载完成后，只需要在 GitHub 仓库里用这个文件覆盖原有的
+            <code>boardgame-rules.html</code>，静待 Pages 刷新即可。
+          </p>
+
+          <details class="rules-editor-preview">
+            <summary>（可选）查看导出 HTML 预览</summary>
+            <textarea id="preview-area" class="card-gen-textarea" readonly></textarea>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        © 2025 月之森的黄瓜架 · Rulebook Editor
+      </div>
+    </footer>
+  </div>
+
+  <script src="particles.js"></script>
+  <script>
+    // ====== 简单的工具函数 ======
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function createParagraphTextarea(initialValue) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "rules-editor-paragraph-row";
+
+      const textarea = document.createElement("textarea");
+      textarea.className = "rules-editor-paragraph";
+      textarea.placeholder = "在这里输入一段规则正文（支持换行，导出会自动转成段落或换行）";
+      textarea.value = initialValue || "";
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "btn btn-ghost btn-xxs";
+      removeBtn.textContent = "删除本段";
+
+      removeBtn.addEventListener("click", () => {
+        wrapper.remove();
+      });
+
+      wrapper.appendChild(textarea);
+      wrapper.appendChild(removeBtn);
+
+      return wrapper;
+    }
+
+    function createSectionBlock(data) {
+      const sectionId = data.id || "";
+      const title = data.title || "";
+      const subheading = data.subheading || "";
+      const paragraphs = data.paragraphs || [""];
+
+      const section = document.createElement("div");
+      section.className = "rules-editor-section";
+      section.dataset.sectionId = sectionId;
+
+      section.innerHTML = `
+        <div class="form-row">
+          <label>章节 ID（英文字母，将作为 <code>id</code> 使用）</label>
+          <input
+            type="text"
+            class="input rules-editor-section-id"
+            placeholder="例如：core-rules / dlc1-rules / mirror-rules"
+            value="${escapeHtml(sectionId)}"
+          />
+        </div>
+        <div class="form-row">
+          <label>章节标题（显示在网页上的大标题）</label>
+          <input
+            type="text"
+            class="input rules-editor-section-title-input"
+            placeholder="例如：一、基础规则（主世界 · 本篇）"
+            value="${escapeHtml(title)}"
+          />
+        </div>
+        <div class="form-row">
+          <label>章节导语 / 小标题（可选）</label>
+          <textarea
+            class="card-gen-textarea rules-editor-section-subheading-input"
+            placeholder="这里写一两句介绍这个章节的大意，可以留空。"
+          >${escapeHtml(subheading)}</textarea>
+        </div>
+        <div class="form-row">
+          <label>正文段落</label>
+          <div class="rules-editor-paragraphs"></div>
+          <button type="button" class="btn btn-ghost btn-xxs rules-editor-add-paragraph">
+            ＋ 添加一段正文
+          </button>
+        </div>
+        <div class="rules-editor-section-footer">
+          <button type="button" class="btn btn-ghost btn-compact rules-editor-remove-section">
+            删除整个章节
+          </button>
+        </div>
+      `;
+
+      const paragraphsContainer = section.querySelector(".rules-editor-paragraphs");
+      paragraphs.forEach((p) => {
+        const row = createParagraphTextarea(p);
+        paragraphsContainer.appendChild(row);
+      });
+
+      const addParagraphBtn = section.querySelector(".rules-editor-add-paragraph");
+      addParagraphBtn.addEventListener("click", () => {
+        const row = createParagraphTextarea("");
+        paragraphsContainer.appendChild(row);
+      });
+
+      const removeSectionBtn = section.querySelector(".rules-editor-remove-section");
+      removeSectionBtn.addEventListener("click", () => {
+        if (confirm("确定要删除整个章节吗？此操作不可撤销。")) {
+          section.remove();
+        }
+      });
+
+      return section;
+    }
+
+    function getSectionDataFromDom(section) {
+      const id = section.querySelector(".rules-editor-section-id").value.trim();
+      const title = section.querySelector(".rules-editor-section-title-input").value.trim();
+      const subheading = section
+        .querySelector(".rules-editor-section-subheading-input")
+        .value
+        .trim();
+
+      const paragraphEls = section.querySelectorAll(".rules-editor-paragraph");
+      const paragraphs = [];
+      paragraphEls.forEach((ta) => {
+        const val = ta.value.trim();
+        if (val) paragraphs.push(val);
+      });
+
+      return { id, title, subheading, paragraphs };
+    }
+
+    function generateRulebookHtml(sections) {
+      let html = "";
+
+      html += "<!DOCTYPE html>\\n";
+      html += '<html lang="zh-CN">\\n';
+      html += "<head>\\n";
+      html += '  <meta charset="UTF-8" />\\n';
+      html += "  <title>完整规则书 | 月之森的黄瓜架</title>\\n";
+      html += '  <meta name="viewport" content="width=device-width, initial-scale=1" />\\n';
+      html += '  <link rel="stylesheet" href="style.css" />\\n';
+      html += "</head>\\n";
+      html += "<body>\\n";
+      html += '  <canvas id="bg-canvas"></canvas>\\n\\n';
+      html += '  <div class="shell">\\n';
+      html += "    <header class=\\"site-header\\">\\n";
+      html += '      <div class="container header-inner">\\n';
+      html += '        <a href="index.html" class="logo">月の森<span>🥒</span></a>\\n';
+      html += '        <nav class="nav-links">\\n';
+      html += '          <a href="boardgame.html" class="nav-link">桌游卡包</a>\\n';
+      html += '          <a href="boardgame-reference.html" class="nav-link">规则与词条</a>\\n';
+      html += '          <a href="index.html" class="nav-link">资料馆首页</a>\\n';
+      html += "        </nav>\\n";
+      html += "      </div>\\n";
+      html += "    </header>\\n\\n";
+
+      html += '    <main class="container boardgame-rules-main">\\n';
+      html += "      <section class=\\"hero\\">\\n";
+      html += '        <p class="eyebrow">Board Game · Rulebook</p>\\n';
+      html += '        <h1 class="hero-title">月之森桌游 · 完整规则书</h1>\\n';
+      html +=
+        '        <p class="hero-subtitle">这里收录整本规则书的正文内容，包括基础规则、扩展规则、镜世界追加规则，以及 Q&amp;A / 勘误。</p>\\n';
+      html += "      </section>\\n\\n";
+
+      // 目录
+      html += '      <nav class="rulebook-toc">\\n';
+      html += '        <p class="toc-title">目录导航</p>\\n';
+      html += '        <ul class="toc-list">\\n';
+      sections.forEach((sec) => {
+        if (!sec.id || !sec.title) return;
+        html +=
+          '          <li><a href="#' +
+          escapeHtml(sec.id) +
+          '">' +
+          escapeHtml(sec.title) +
+          "</a></li>\\n";
+      });
+      html += "        </ul>\\n";
+      html += "      </nav>\\n\\n";
+
+      // 各章节
+      sections.forEach((sec) => {
+        if (!sec.id || !sec.title) return;
+
+        html +=
+          '      <section id="' +
+          escapeHtml(sec.id) +
+          '" class="rulebook-section">\\n';
+        html +=
+          '        <h2 class="rulebook-heading">' +
+          escapeHtml(sec.title) +
+          "</h2>\\n";
+
+        if (sec.subheading) {
+          html +=
+            '        <p class="rulebook-subheading">' +
+            escapeHtml(sec.subheading) +
+            "</p>\\n";
+        }
+
+        html += '        <div class="rulebook-body">\\n';
+
+        sec.paragraphs.forEach((p) => {
+          // 换行转成 <br />，其他字符进行转义
+          const safe = escapeHtml(p).replace(/\\n/g, "<br />");
+          html += "          <p>" + safe + "</p>\\n";
+        });
+
+        html += "        </div>\\n";
+        html += "      </section>\\n\\n";
+      });
+
+      html += "    </main>\\n\\n";
+      html += '    <footer class="site-footer">\\n';
+      html += '      <div class="container">\\n';
+      html += "        © 2025 月之森的黄瓜架 · Rulebook\\n";
+      html += "      </div>\\n";
+      html += "    </footer>\\n";
+      html += "  </div>\\n\\n";
+
+      html += '  <script src="particles.js"></' + "script>\\n";
+      html += "</body>\\n</html>\\n";
+
+      return html;
+    }
+
+    function initEditor() {
+      const container = document.getElementById("sections-container");
+      const addBtn = document.getElementById("add-section-btn");
+      const exportBtn = document.getElementById("export-btn");
+      const previewArea = document.getElementById("preview-area");
+
+      if (!container) return;
+
+      // 初始化一些默认章节（你可以之后在编辑器里随意删除/修改）
+      const defaultSections = [
+        {
+          id: "core-rules",
+          title: "一、基础规则（主世界 · 本篇）",
+          subheading:
+            "建议将纸质规则书中关于 Lv1 对局结构、基本名词解释、资源与回合流程的章节搬到这里。",
+          paragraphs: [
+            "【示例】这里写清楚一局游戏的获胜条件、失败条件，以及是否存在平局、特殊结算等情况。",
+            "【示例】说明开启对局前如何构筑卡组、每个卡包的基础数量要求，以及“政策 / 装备 / 单位”等基本类别。",
+          ],
+        },
+        {
+          id: "dlc1-rules",
+          title: "二、扩展规则（DLC1：新教徒 / 森妖怪）",
+          subheading:
+            "这里集中描述当使用 DLC1 卡包时，额外增加的规则、关键字与对基础规则的修改。",
+          paragraphs: [
+            "【示例】是否需要替换基础卡、增加某些初始资源、改动起始手牌等。",
+          ],
+        },
+        {
+          id: "mirror-rules",
+          title: "三、镜世界规则（DLC2：鸿园等）",
+          subheading:
+            "当对局进入镜世界时，采用何种额外流程、时空/平行世界相关的特殊条目在此处说明。",
+          paragraphs: [
+            "【示例】写清楚进入镜世界的条件，以及镜世界中的通用变化，例如资源规则是否改变、关键字是否获得新含义等。",
+          ],
+        },
+        {
+          id: "faq",
+          title: "四、Q&A 与勘误",
+          subheading:
+            "在这里集中回答玩家常见问题，并记录规则书的勘误与版本更新说明。",
+          paragraphs: [
+            "Q：某张卡的“本回合中”效果在对方回合是否继续生效？\\nA：根据你的实际规则进行回答，在这里写清楚判定原则。",
+          ],
+        },
+      ];
+
+      defaultSections.forEach((sec) => {
+        const block = createSectionBlock(sec);
+        container.appendChild(block);
+      });
+
+      addBtn.addEventListener("click", () => {
+        const block = createSectionBlock({
+          id: "",
+          title: "",
+          subheading: "",
+          paragraphs: [""],
+        });
+        container.appendChild(block);
+        block.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+
+      exportBtn.addEventListener("click", () => {
+        const sectionEls = container.querySelectorAll(".rules-editor-section");
+        const sections = [];
+
+        sectionEls.forEach((el) => {
+          const data = getSectionDataFromDom(el);
+          if (data.id && data.title && data.paragraphs.length > 0) {
+            sections.push(data);
+          }
+        });
+
+        if (!sections.length) {
+          alert("请至少保留一个有 ID、标题和正文的章节。");
+          return;
+        }
+
+        const html = generateRulebookHtml(sections);
+
+        // 预览
+        if (previewArea) {
+          previewArea.value = html;
+        }
+
+        // 触发下载
+        const blob = new Blob([html], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "boardgame-rules.html";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", initEditor);
+  </script>
+</body>
+</html>
