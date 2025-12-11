@@ -15,17 +15,16 @@ const CARD_GAME = {
   description: "在这里写一句对「保皇党」的介绍。",
   note: ""
 },
-    {
-      id: "rebel-lv1",
-      name: "起义军",
-      subtitle: "本篇 · 基础卡组",
-      side: "起义军",
-      era: "主世界 · 一代",
-      status: "released",
-      description:
-        "以节奏爆发和局部优势为主的对立卡组，用更激进的方式打破僵局。",
-      note: ""
-    },
+{
+  id: "revote",
+  name: "起义军",
+  subtitle: "本篇·基础卡组",
+  side: "起义军",
+  era: "主世界",
+  status: "released",
+  description: "在这里写一句对「起义军」的介绍。",
+  note: ""
+},
     {
       id: "new-faith-dlc1",
       name: "新教徒",
