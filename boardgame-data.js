@@ -25,17 +25,16 @@ const CARD_GAME = {
   description: "在这里写一句对「起义军」的介绍。",
   note: ""
 },
-    {
-      id: "new-faith-dlc1",
-      name: "新教徒",
-      subtitle: "DLC1 · 世界",
-      side: "中立 / 变革",
-      era: "主世界 · 扩展",
-      status: "wip",
-      description:
-        "通过仪式与转换，改写局面结构的扩展包。这里将来可以补充更多世界观说明。",
-      note: ""
-    },
+{
+  id: "faith",
+  name: "新教徒",
+  subtitle: "DLC1·本篇",
+  side: "新教徒",
+  era: "主世界·迭代",
+  status: "released",
+  description: "在这里写一句对「新教徒」的介绍。",
+  note: ""
+},
     {
       id: "forest-spirits-dlc1",
       name: "森妖怪",
