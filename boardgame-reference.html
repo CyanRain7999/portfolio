@@ -35,7 +35,7 @@
 
       <!-- 主体两栏：左规则 / 右词条 -->
       <section class="boardgame-ref-grid">
-        <!-- 左：规则结构 -->
+        <!-- ✅ 左：规则结构面板（完整包裹在一个 div 里） -->
         <div class="boardgame-ref-panel">
           <h2 class="section-title small">规则书</h2>
           <p class="section-subtitle">
@@ -43,44 +43,45 @@
           </p>
 
           <div class="rules-list">
-            <!-- 示例条目，后续你可以自己改内容 -->
-            <article class="rule-card">
+            <!-- 基础规则：跳到规则书页面的 #core-rules 段 -->
+            <a class="rule-card rule-card--link" href="boardgame-rules.html#core-rules">
               <h3 class="rule-title">基础规则 · Lv1 对局结构</h3>
               <p class="rule-meta">主世界 · 本篇</p>
               <p class="rule-text">
                 包含回合流程、资源获取、部署单位/政策的基本步骤，以及胜负条件说明。
               </p>
-              <!-- 将来如果你有专门的规则页面，可以改成链接 -->
-              <!-- <a href="rules-lv1.html" class="btn btn-ghost btn-compact">查看详细</a> -->
-            </article>
+            </a>
 
-            <article class="rule-card">
+            <!-- DLC1 规则 -->
+            <a class="rule-card rule-card--link" href="boardgame-rules.html#dlc1-rules">
               <h3 class="rule-title">扩展规则 · DLC1：新教徒 / 森妖怪</h3>
               <p class="rule-meta">DLC1 · 条件与新机制</p>
               <p class="rule-text">
                 记录新教徒与森妖怪引入的额外关键字、新资源或特殊区域规则，
                 以及与本篇的兼容方式。
               </p>
-            </article>
+            </a>
 
-            <article class="rule-card">
+            <!-- 镜世界规则 -->
+            <a class="rule-card rule-card--link" href="boardgame-rules.html#mirror-rules">
               <h3 class="rule-title">镜世界规则 · 鸿园等卡包</h3>
               <p class="rule-meta">DLC2 · 镜世界</p>
               <p class="rule-text">
                 当对局进入镜世界时，采用的额外流程、时空/平行世界相关的特殊条目。
               </p>
-            </article>
+            </a>
 
-            <article class="rule-card rule-card--placeholder">
-              <h3 class="rule-title">（预留）Q&A 与勘误</h3>
+            <!-- FAQ / 勘误 -->
+            <a class="rule-card rule-card--link rule-card--placeholder" href="boardgame-rules.html#faq">
+              <h3 class="rule-title">Q&A 与勘误</h3>
               <p class="rule-text">
                 将来当出现 FAQ、勘误、平衡调整说明时，可以集中放在这里。
               </p>
-            </article>
+            </a>
           </div>
-        </div>
+        </div> <!-- ← 这一行是关键：左边 panel 真的关闭了 -->
 
-        <!-- 右：词条区 + 搜索 -->
+        <!-- ✅ 右：词条区 + 搜索面板（作为另一个兄弟 div） -->
         <div class="boardgame-ref-panel">
           <h2 class="section-title small">术语 / 词条</h2>
           <p class="section-subtitle">
@@ -101,7 +102,7 @@
           <div id="term-list" class="term-list-grid">
             <!-- 词条列表由 JS 渲染 -->
           </div>
-        </div>
+        </div> <!-- 右侧 panel 结束 -->
       </section>
     </main>
 

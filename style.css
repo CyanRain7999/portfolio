@@ -823,5 +823,114 @@ body {
 }
 
 
+/* rule-card 作为链接时的基础样式 */
+a.rule-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  cursor: pointer;
+}
+
+.rule-card.rule-card--link:hover {
+  /* 已经有 hover 效果的话，这里可以只保证鼠标样式与阴影配合 */
+  cursor: pointer;
+}
+
+/* ====== 桌游 · 完整规则书页 ====== */
+
+.boardgame-rules-main {
+  padding-top: 2.5rem;
+  padding-bottom: 3rem;
+}
+
+.rulebook-toc {
+  margin-bottom: 1.5rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  box-shadow: var(--shadow-soft);
+}
+
+.toc-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+  color: var(--text-muted);
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+}
+
+.toc-list a {
+  font-size: 0.86rem;
+  text-decoration: none;
+  color: var(--accent);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(209, 250, 229, 0.7);
+}
+
+.toc-list a:hover {
+  background: rgba(59, 122, 87, 0.14);
+}
+
+/* 规则正文区块 */
+
+.rulebook-section {
+  margin-bottom: 2.2rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  box-shadow: var(--shadow-soft);
+}
+
+.rulebook-heading {
+  font-size: 1.15rem;
+  margin: 0 0 0.3rem;
+}
+
+.rulebook-subheading {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  margin: 0 0 0.6rem;
+}
+
+.rulebook-body {
+  font-size: 0.9rem;
+  color: var(--text-normal);
+  line-height: 1.7;
+}
+
+.rulebook-subtitle {
+  font-size: 0.98rem;
+  margin: 0.9rem 0 0.25rem;
+}
+
+.rulebook-list {
+  padding-left: 1.2rem;
+  margin: 0.3rem 0 0.6rem;
+  font-size: 0.9rem;
+}
+
+.rulebook-faq dt {
+  font-weight: 600;
+  margin-top: 0.6rem;
+}
+
+.rulebook-faq dd {
+  margin: 0.2rem 0 0.4rem 0;
+}
+
+/* 小屏幕到大屏幕，规则段本身自适应宽度即可，无需额外 grid */
+
+
 
 
