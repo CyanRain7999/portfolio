@@ -33,6 +33,7 @@
       </section>
 
       <section class="boardgame-ref-grid">
+        <!-- 左侧：章节编辑 -->
         <div class="boardgame-ref-panel">
           <h2 class="section-title small">章节内容</h2>
           <p class="section-subtitle">
@@ -40,7 +41,7 @@
           </p>
 
           <div id="sections-container" class="rules-editor-sections">
-            <!-- 章节编辑区由 JS 初始化 -->
+            <!-- JS 初始化默认章节 -->
           </div>
 
           <button id="add-section-btn" class="btn btn-ghost btn-compact" type="button">
@@ -48,6 +49,7 @@
           </button>
         </div>
 
+        <!-- 右侧：导出 -->
         <div class="boardgame-ref-panel">
           <h2 class="section-title small">导出规则书 HTML</h2>
           <p class="section-subtitle">
@@ -81,8 +83,7 @@
 
   <script src="particles.js"></script>
   <script>
-    // ====== 简单的工具函数 ======
-
+    // ====== 简单工具函数 ======
     function escapeHtml(str) {
       return String(str || "")
         .replace(/&/g, "&amp;")
@@ -92,225 +93,258 @@
         .replace(/'/g, "&#39;");
     }
 
-    function createParagraphTextarea(initialValue) {
-      const wrapper = document.createElement("div");
+    function createParagraphRow(initialText) {
+      var wrapper = document.createElement("div");
       wrapper.className = "rules-editor-paragraph-row";
 
-      const textarea = document.createElement("textarea");
+      var textarea = document.createElement("textarea");
       textarea.className = "rules-editor-paragraph";
-      textarea.placeholder = "在这里输入一段规则正文（支持换行，导出会自动转成段落或换行）";
-      textarea.value = initialValue || "";
+      textarea.placeholder = "在这里输入一段规则正文（支持换行，导出会自动转成段落 / 换行）";
+      textarea.value = initialText || "";
 
-      const removeBtn = document.createElement("button");
+      var removeBtn = document.createElement("button");
       removeBtn.type = "button";
       removeBtn.className = "btn btn-ghost btn-xxs";
       removeBtn.textContent = "删除本段";
 
-      removeBtn.addEventListener("click", () => {
+      removeBtn.addEventListener("click", function () {
         wrapper.remove();
       });
 
       wrapper.appendChild(textarea);
       wrapper.appendChild(removeBtn);
-
       return wrapper;
     }
 
     function createSectionBlock(data) {
-      const sectionId = data.id || "";
-      const title = data.title || "";
-      const subheading = data.subheading || "";
-      const paragraphs = data.paragraphs || [""];
+      data = data || {};
+      var sectionId = data.id || "";
+      var title = data.title || "";
+      var subheading = data.subheading || "";
+      var paragraphs = data.paragraphs || [""];
 
-      const section = document.createElement("div");
+      var section = document.createElement("div");
       section.className = "rules-editor-section";
-      section.dataset.sectionId = sectionId;
 
-      section.innerHTML = `
-        <div class="form-row">
-          <label>章节 ID（英文字母，将作为 <code>id</code> 使用）</label>
-          <input
-            type="text"
-            class="input rules-editor-section-id"
-            placeholder="例如：core-rules / dlc1-rules / mirror-rules"
-            value="${escapeHtml(sectionId)}"
-          />
-        </div>
-        <div class="form-row">
-          <label>章节标题（显示在网页上的大标题）</label>
-          <input
-            type="text"
-            class="input rules-editor-section-title-input"
-            placeholder="例如：一、基础规则（主世界 · 本篇）"
-            value="${escapeHtml(title)}"
-          />
-        </div>
-        <div class="form-row">
-          <label>章节导语 / 小标题（可选）</label>
-          <textarea
-            class="card-gen-textarea rules-editor-section-subheading-input"
-            placeholder="这里写一两句介绍这个章节的大意，可以留空。"
-          >${escapeHtml(subheading)}</textarea>
-        </div>
-        <div class="form-row">
-          <label>正文段落</label>
-          <div class="rules-editor-paragraphs"></div>
-          <button type="button" class="btn btn-ghost btn-xxs rules-editor-add-paragraph">
-            ＋ 添加一段正文
-          </button>
-        </div>
-        <div class="rules-editor-section-footer">
-          <button type="button" class="btn btn-ghost btn-compact rules-editor-remove-section">
-            删除整个章节
-          </button>
-        </div>
-      `;
+      // 章节 ID
+      var rowId = document.createElement("div");
+      rowId.className = "form-row";
+      var labelId = document.createElement("label");
+      labelId.innerHTML = "章节 ID（英文字母，将作为 <code>id</code> 使用）";
+      var inputId = document.createElement("input");
+      inputId.type = "text";
+      inputId.className = "input rules-editor-section-id";
+      inputId.placeholder = "例如：core-rules / dlc1-rules / mirror-rules";
+      inputId.value = sectionId;
+      rowId.appendChild(labelId);
+      rowId.appendChild(inputId);
 
-      const paragraphsContainer = section.querySelector(".rules-editor-paragraphs");
-      paragraphs.forEach((p) => {
-        const row = createParagraphTextarea(p);
-        paragraphsContainer.appendChild(row);
+      // 章节标题
+      var rowTitle = document.createElement("div");
+      rowTitle.className = "form-row";
+      var labelTitle = document.createElement("label");
+      labelTitle.textContent = "章节标题（网页上的大标题）";
+      var inputTitle = document.createElement("input");
+      inputTitle.type = "text";
+      inputTitle.className = "input rules-editor-section-title-input";
+      inputTitle.placeholder = "例如：一、基础规则（主世界 · 本篇）";
+      inputTitle.value = title;
+      rowTitle.appendChild(labelTitle);
+      rowTitle.appendChild(inputTitle);
+
+      // 导语
+      var rowSub = document.createElement("div");
+      rowSub.className = "form-row";
+      var labelSub = document.createElement("label");
+      labelSub.textContent = "章节导语 / 小标题（可选）";
+      var textareaSub = document.createElement("textarea");
+      textareaSub.className = "card-gen-textarea rules-editor-section-subheading-input";
+      textareaSub.placeholder = "这里写一两句介绍，可以留空。";
+      textareaSub.value = subheading;
+      rowSub.appendChild(labelSub);
+      rowSub.appendChild(textareaSub);
+
+      // 正文段落
+      var rowParas = document.createElement("div");
+      rowParas.className = "form-row";
+      var labelParas = document.createElement("label");
+      labelParas.textContent = "正文段落";
+      var parasContainer = document.createElement("div");
+      parasContainer.className = "rules-editor-paragraphs";
+
+      paragraphs.forEach(function (p) {
+        parasContainer.appendChild(createParagraphRow(p));
       });
 
-      const addParagraphBtn = section.querySelector(".rules-editor-add-paragraph");
-      addParagraphBtn.addEventListener("click", () => {
-        const row = createParagraphTextarea("");
-        paragraphsContainer.appendChild(row);
+      var addParaBtn = document.createElement("button");
+      addParaBtn.type = "button";
+      addParaBtn.className = "btn btn-ghost btn-xxs rules-editor-add-paragraph";
+      addParaBtn.textContent = "＋ 添加一段正文";
+
+      addParaBtn.addEventListener("click", function () {
+        parasContainer.appendChild(createParagraphRow(""));
       });
 
-      const removeSectionBtn = section.querySelector(".rules-editor-remove-section");
-      removeSectionBtn.addEventListener("click", () => {
+      rowParas.appendChild(labelParas);
+      rowParas.appendChild(parasContainer);
+      rowParas.appendChild(addParaBtn);
+
+      // 删除章节按钮
+      var footer = document.createElement("div");
+      footer.className = "rules-editor-section-footer";
+      var removeSectionBtn = document.createElement("button");
+      removeSectionBtn.type = "button";
+      removeSectionBtn.className = "btn btn-ghost btn-compact rules-editor-remove-section";
+      removeSectionBtn.textContent = "删除整个章节";
+
+      removeSectionBtn.addEventListener("click", function () {
         if (confirm("确定要删除整个章节吗？此操作不可撤销。")) {
           section.remove();
         }
       });
 
+      footer.appendChild(removeSectionBtn);
+
+      // 组装 section
+      section.appendChild(rowId);
+      section.appendChild(rowTitle);
+      section.appendChild(rowSub);
+      section.appendChild(rowParas);
+      section.appendChild(footer);
+
       return section;
     }
 
-    function getSectionDataFromDom(section) {
-      const id = section.querySelector(".rules-editor-section-id").value.trim();
-      const title = section.querySelector(".rules-editor-section-title-input").value.trim();
-      const subheading = section
+    function getSectionData(section) {
+      var id = section.querySelector(".rules-editor-section-id").value.trim();
+      var title = section.querySelector(".rules-editor-section-title-input").value.trim();
+      var subheading = section
         .querySelector(".rules-editor-section-subheading-input")
         .value
         .trim();
 
-      const paragraphEls = section.querySelectorAll(".rules-editor-paragraph");
-      const paragraphs = [];
-      paragraphEls.forEach((ta) => {
-        const val = ta.value.trim();
+      var paragraphs = [];
+      var paraEls = section.querySelectorAll(".rules-editor-paragraph");
+      paraEls.forEach(function (ta) {
+        var val = ta.value.trim();
         if (val) paragraphs.push(val);
       });
 
-      return { id, title, subheading, paragraphs };
+      return { id: id, title: title, subheading: subheading, paragraphs: paragraphs };
     }
 
     function generateRulebookHtml(sections) {
-      let html = "";
+      var lines = [];
 
-      html += "<!DOCTYPE html>\\n";
-      html += '<html lang="zh-CN">\\n';
-      html += "<head>\\n";
-      html += '  <meta charset="UTF-8" />\\n';
-      html += "  <title>完整规则书 | 月之森的黄瓜架</title>\\n";
-      html += '  <meta name="viewport" content="width=device-width, initial-scale=1" />\\n';
-      html += '  <link rel="stylesheet" href="style.css" />\\n';
-      html += "</head>\\n";
-      html += "<body>\\n";
-      html += '  <canvas id="bg-canvas"></canvas>\\n\\n';
-      html += '  <div class="shell">\\n';
-      html += "    <header class=\\"site-header\\">\\n";
-      html += '      <div class="container header-inner">\\n';
-      html += '        <a href="index.html" class="logo">月の森<span>🥒</span></a>\\n';
-      html += '        <nav class="nav-links">\\n';
-      html += '          <a href="boardgame.html" class="nav-link">桌游卡包</a>\\n';
-      html += '          <a href="boardgame-reference.html" class="nav-link">规则与词条</a>\\n';
-      html += '          <a href="index.html" class="nav-link">资料馆首页</a>\\n';
-      html += "        </nav>\\n";
-      html += "      </div>\\n";
-      html += "    </header>\\n\\n";
-
-      html += '    <main class="container boardgame-rules-main">\\n';
-      html += "      <section class=\\"hero\\">\\n";
-      html += '        <p class="eyebrow">Board Game · Rulebook</p>\\n';
-      html += '        <h1 class="hero-title">月之森桌游 · 完整规则书</h1>\\n';
-      html +=
-        '        <p class="hero-subtitle">这里收录整本规则书的正文内容，包括基础规则、扩展规则、镜世界追加规则，以及 Q&amp;A / 勘误。</p>\\n';
-      html += "      </section>\\n\\n";
-
+      lines.push("<!DOCTYPE html>");
+      lines.push('<html lang="zh-CN">');
+      lines.push("<head>");
+      lines.push('  <meta charset="UTF-8" />');
+      lines.push("  <title>完整规则书 | 月之森的黄瓜架</title>");
+      lines.push('  <meta name="viewport" content="width=device-width, initial-scale=1" />');
+      lines.push('  <link rel="stylesheet" href="style.css" />');
+      lines.push("</head>");
+      lines.push("<body>");
+      lines.push('  <canvas id="bg-canvas"></canvas>');
+      lines.push("");
+      lines.push('  <div class="shell">');
+      lines.push('    <header class="site-header">');
+      lines.push('      <div class="container header-inner">');
+      lines.push('        <a href="index.html" class="logo">月の森<span>🥒</span></a>');
+      lines.push('        <nav class="nav-links">');
+      lines.push('          <a href="boardgame.html" class="nav-link">桌游卡包</a>');
+      lines.push('          <a href="boardgame-reference.html" class="nav-link">规则与词条</a>');
+      lines.push('          <a href="index.html" class="nav-link">资料馆首页</a>');
+      lines.push("        </nav>");
+      lines.push("      </div>");
+      lines.push("    </header>");
+      lines.push("");
+      lines.push('    <main class="container boardgame-rules-main">');
+      lines.push('      <section class="hero">');
+      lines.push('        <p class="eyebrow">Board Game · Rulebook</p>');
+      lines.push('        <h1 class="hero-title">月之森桌游 · 完整规则书</h1>');
+      lines.push(
+        '        <p class="hero-subtitle">这里收录整本规则书的正文内容，包括基础规则、扩展规则、镜世界追加规则，以及 Q&amp;A / 勘误。</p>'
+      );
+      lines.push("      </section>");
+      lines.push("");
       // 目录
-      html += '      <nav class="rulebook-toc">\\n';
-      html += '        <p class="toc-title">目录导航</p>\\n';
-      html += '        <ul class="toc-list">\\n';
-      sections.forEach((sec) => {
+      lines.push('      <nav class="rulebook-toc">');
+      lines.push('        <p class="toc-title">目录导航</p>');
+      lines.push('        <ul class="toc-list">');
+      sections.forEach(function (sec) {
         if (!sec.id || !sec.title) return;
-        html +=
+        lines.push(
           '          <li><a href="#' +
-          escapeHtml(sec.id) +
-          '">' +
-          escapeHtml(sec.title) +
-          "</a></li>\\n";
+            escapeHtml(sec.id) +
+            '">' +
+            escapeHtml(sec.title) +
+            "</a></li>"
+        );
       });
-      html += "        </ul>\\n";
-      html += "      </nav>\\n\\n";
+      lines.push("        </ul>");
+      lines.push("      </nav>");
+      lines.push("");
 
       // 各章节
-      sections.forEach((sec) => {
+      sections.forEach(function (sec) {
         if (!sec.id || !sec.title) return;
 
-        html +=
+        lines.push(
           '      <section id="' +
-          escapeHtml(sec.id) +
-          '" class="rulebook-section">\\n';
-        html +=
+            escapeHtml(sec.id) +
+            '" class="rulebook-section">'
+        );
+        lines.push(
           '        <h2 class="rulebook-heading">' +
-          escapeHtml(sec.title) +
-          "</h2>\\n";
-
+            escapeHtml(sec.title) +
+            "</h2>"
+        );
         if (sec.subheading) {
-          html +=
+          lines.push(
             '        <p class="rulebook-subheading">' +
-            escapeHtml(sec.subheading) +
-            "</p>\\n";
+              escapeHtml(sec.subheading) +
+              "</p>"
+          );
         }
+        lines.push('        <div class="rulebook-body">');
 
-        html += '        <div class="rulebook-body">\\n';
-
-        sec.paragraphs.forEach((p) => {
-          // 换行转成 <br />，其他字符进行转义
-          const safe = escapeHtml(p).replace(/\\n/g, "<br />");
-          html += "          <p>" + safe + "</p>\\n";
+        sec.paragraphs.forEach(function (p) {
+          var safe = escapeHtml(p).replace(/\n/g, "<br />");
+          lines.push("          <p>" + safe + "</p>");
         });
 
-        html += "        </div>\\n";
-        html += "      </section>\\n\\n";
+        lines.push("        </div>");
+        lines.push("      </section>");
+        lines.push("");
       });
 
-      html += "    </main>\\n\\n";
-      html += '    <footer class="site-footer">\\n';
-      html += '      <div class="container">\\n';
-      html += "        © 2025 月之森的黄瓜架 · Rulebook\\n";
-      html += "      </div>\\n";
-      html += "    </footer>\\n";
-      html += "  </div>\\n\\n";
+      lines.push("    </main>");
+      lines.push("");
+      lines.push('    <footer class="site-footer">');
+      lines.push('      <div class="container">');
+      lines.push("        © 2025 月之森的黄瓜架 · Rulebook");
+      lines.push("      </div>");
+      lines.push("    </footer>");
+      lines.push("  </div>");
+      lines.push("");
+      lines.push('  <script src="particles.js"></' + "script>");
+      lines.push("</body>");
+      lines.push("</html>");
 
-      html += '  <script src="particles.js"></' + "script>\\n";
-      html += "</body>\\n</html>\\n";
-
-      return html;
+      return lines.join("\n");
     }
 
     function initEditor() {
-      const container = document.getElementById("sections-container");
-      const addBtn = document.getElementById("add-section-btn");
-      const exportBtn = document.getElementById("export-btn");
-      const previewArea = document.getElementById("preview-area");
+      var container = document.getElementById("sections-container");
+      var addBtn = document.getElementById("add-section-btn");
+      var exportBtn = document.getElementById("export-btn");
+      var previewArea = document.getElementById("preview-area");
 
       if (!container) return;
 
-      // 初始化一些默认章节（你可以之后在编辑器里随意删除/修改）
-      const defaultSections = [
+      // 默认给你先塞几章示例，之后你可以在页面里直接改 / 删
+      var defaultSections = [
         {
           id: "core-rules",
           title: "一、基础规则（主世界 · 本篇）",
@@ -318,8 +352,8 @@
             "建议将纸质规则书中关于 Lv1 对局结构、基本名词解释、资源与回合流程的章节搬到这里。",
           paragraphs: [
             "【示例】这里写清楚一局游戏的获胜条件、失败条件，以及是否存在平局、特殊结算等情况。",
-            "【示例】说明开启对局前如何构筑卡组、每个卡包的基础数量要求，以及“政策 / 装备 / 单位”等基本类别。",
-          ],
+            "【示例】说明开启对局前如何构筑卡组、每个卡包的基础数量要求，以及“政策 / 装备 / 单位”等基本类别。"
+          ]
         },
         {
           id: "dlc1-rules",
@@ -327,8 +361,8 @@
           subheading:
             "这里集中描述当使用 DLC1 卡包时，额外增加的规则、关键字与对基础规则的修改。",
           paragraphs: [
-            "【示例】是否需要替换基础卡、增加某些初始资源、改动起始手牌等。",
-          ],
+            "【示例】是否需要替换基础卡、增加某些初始资源、改动起始手牌等。"
+          ]
         },
         {
           id: "mirror-rules",
@@ -336,8 +370,8 @@
           subheading:
             "当对局进入镜世界时，采用何种额外流程、时空/平行世界相关的特殊条目在此处说明。",
           paragraphs: [
-            "【示例】写清楚进入镜世界的条件，以及镜世界中的通用变化，例如资源规则是否改变、关键字是否获得新含义等。",
-          ],
+            "【示例】写清楚进入镜世界的条件，以及镜世界中的通用变化，例如资源规则是否改变、关键字是否获得新含义等。"
+          ]
         },
         {
           id: "faq",
@@ -345,33 +379,33 @@
           subheading:
             "在这里集中回答玩家常见问题，并记录规则书的勘误与版本更新说明。",
           paragraphs: [
-            "Q：某张卡的“本回合中”效果在对方回合是否继续生效？\\nA：根据你的实际规则进行回答，在这里写清楚判定原则。",
-          ],
-        },
+            "Q：某张卡的“本回合中”效果在对方回合是否继续生效？\nA：根据你的实际规则进行回答，在这里写清楚判定原则。"
+          ]
+        }
       ];
 
-      defaultSections.forEach((sec) => {
-        const block = createSectionBlock(sec);
-        container.appendChild(block);
+      defaultSections.forEach(function (sec) {
+        container.appendChild(createSectionBlock(sec));
       });
 
-      addBtn.addEventListener("click", () => {
-        const block = createSectionBlock({
-          id: "",
-          title: "",
-          subheading: "",
-          paragraphs: [""],
-        });
-        container.appendChild(block);
-        block.scrollIntoView({ behavior: "smooth", block: "start" });
+      addBtn.addEventListener("click", function () {
+        container.appendChild(
+          createSectionBlock({
+            id: "",
+            title: "",
+            subheading: "",
+            paragraphs: [""]
+          })
+        );
+        container.lastElementChild.scrollIntoView({ behavior: "smooth", block: "start" });
       });
 
-      exportBtn.addEventListener("click", () => {
-        const sectionEls = container.querySelectorAll(".rules-editor-section");
-        const sections = [];
+      exportBtn.addEventListener("click", function () {
+        var sections = [];
+        var sectionEls = container.querySelectorAll(".rules-editor-section");
 
-        sectionEls.forEach((el) => {
-          const data = getSectionDataFromDom(el);
+        sectionEls.forEach(function (el) {
+          var data = getSectionData(el);
           if (data.id && data.title && data.paragraphs.length > 0) {
             sections.push(data);
           }
@@ -382,17 +416,15 @@
           return;
         }
 
-        const html = generateRulebookHtml(sections);
+        var html = generateRulebookHtml(sections);
 
-        // 预览
         if (previewArea) {
           previewArea.value = html;
         }
 
-        // 触发下载
-        const blob = new Blob([html], { type: "text/html" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        var blob = new Blob([html], { type: "text/html" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
         a.href = url;
         a.download = "boardgame-rules.html";
         document.body.appendChild(a);

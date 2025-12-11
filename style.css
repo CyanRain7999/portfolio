@@ -932,5 +932,42 @@ a.rule-card {
 /* 小屏幕到大屏幕，规则段本身自适应宽度即可，无需额外 grid */
 
 
+/* 规则书编辑器样式补充 */
+
+.rules-editor-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-bottom: 0.7rem;
+}
+
+.rules-editor-section {
+  border-radius: 0.9rem;
+  padding: 0.8rem 0.9rem;
+  background: rgba(248, 250, 252, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.7);
+}
+
+.rules-editor-paragraph-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.rules-editor-paragraph {
+  flex: 1 1 auto;
+  min-height: 4.5rem;
+}
+
+.rules-editor-section-footer {
+  margin-top: 0.4rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rules-editor-preview textarea {
+  margin-top: 0.5rem;
+  min-height: 8rem;
+}
 
 
