@@ -31,12 +31,33 @@
         </p>
       </section>
 
-      <section>
-        <div class="boardgame-pack-grid" id="pack-grid">
-          <!-- 由 JS 渲染卡包 card -->
-        </div>
-      </section>
-    </main>
+<section>
+  <div class="boardgame-pack-grid">
+    <!-- 规则与词条的固定入口卡片 -->
+    <article class="boardgame-pack-card boardgame-pack-card--rules">
+      <div class="boardgame-pack-card-header">
+        <div class="pack-badge">规则 & 词条</div>
+        <div class="pack-subtitle">Rulebook & Glossary</div>
+      </div>
+      <h2 class="boardgame-pack-title">规则书与术语索引</h2>
+      <p class="boardgame-pack-desc">
+        整体规则、关键词条、常见疑问都收纳在这里。
+        <br />
+        比起翻 Excel，来这边查一眼会轻松很多。
+      </p>
+      <div class="boardgame-pack-footer">
+        <a href="boardgame-reference.html" class="btn btn-primary btn-compact">
+          打开规则与词条
+        </a>
+      </div>
+    </article>
+  </div>
+
+  <!-- 原来的 JS 渲染区：专门装卡包 -->
+  <div class="boardgame-pack-grid" id="pack-grid">
+    <!-- 由 JS 渲染卡包 card -->
+  </div>
+</section>
 
     <footer class="site-footer">
       <div class="container">
@@ -47,7 +68,7 @@
 
   <!-- 先引入桌游数据，再用脚本渲染卡包列表 -->
   <script src="boardgame-data.js"></script>
-  <script src="portfolio-particles.js"></script>
+  <script src="particles.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       if (!window.CARD_GAME || !Array.isArray(CARD_GAME.packs)) return;

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>规则与词条 | 月之森的黄瓜架</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="index.html" class="logo">月の森<span>🥒</span></a>
+        <nav class="nav-links">
+          <a href="boardgame.html" class="nav-link">桌游卡包</a>
+          <a href="index.html" class="nav-link">资料馆首页</a>
+          <a href="https://cyanrain7999.github.io" class="nav-link">返回主站</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container boardgame-ref-main">
+      <!-- 顶部简介 -->
+      <section class="hero">
+        <p class="eyebrow">Board Game · Reference</p>
+        <h1 class="hero-title">规则书与术语索引</h1>
+        <p class="hero-subtitle">
+          这里集中放置桌游的基础规则、进阶规则、DLC 补充，以及常用的术语/词条解释。
+          <br />
+          当你在卡包之间来回跳时，这里可以作为一个“总规则中心”。
+        </p>
+      </section>
+
+      <!-- 主体两栏：左规则 / 右词条 -->
+      <section class="boardgame-ref-grid">
+        <!-- 左：规则结构 -->
+        <div class="boardgame-ref-panel">
+          <h2 class="section-title small">规则书</h2>
+          <p class="section-subtitle">
+            可以把这里当作规则索引页：按模块拆开，方便日后扩展。
+          </p>
+
+          <div class="rules-list">
+            <!-- 示例条目，后续你可以自己改内容 -->
+            <article class="rule-card">
+              <h3 class="rule-title">基础规则 · Lv1 对局结构</h3>
+              <p class="rule-meta">主世界 · 本篇</p>
+              <p class="rule-text">
+                包含回合流程、资源获取、部署单位/政策的基本步骤，以及胜负条件说明。
+              </p>
+              <!-- 将来如果你有专门的规则页面，可以改成链接 -->
+              <!-- <a href="rules-lv1.html" class="btn btn-ghost btn-compact">查看详细</a> -->
+            </article>
+
+            <article class="rule-card">
+              <h3 class="rule-title">扩展规则 · DLC1：新教徒 / 森妖怪</h3>
+              <p class="rule-meta">DLC1 · 条件与新机制</p>
+              <p class="rule-text">
+                记录新教徒与森妖怪引入的额外关键字、新资源或特殊区域规则，
+                以及与本篇的兼容方式。
+              </p>
+            </article>
+
+            <article class="rule-card">
+              <h3 class="rule-title">镜世界规则 · 鸿园等卡包</h3>
+              <p class="rule-meta">DLC2 · 镜世界</p>
+              <p class="rule-text">
+                当对局进入镜世界时，采用的额外流程、时空/平行世界相关的特殊条目。
+              </p>
+            </article>
+
+            <article class="rule-card rule-card--placeholder">
+              <h3 class="rule-title">（预留）Q&A 与勘误</h3>
+              <p class="rule-text">
+                将来当出现 FAQ、勘误、平衡调整说明时，可以集中放在这里。
+              </p>
+            </article>
+          </div>
+        </div>
+
+        <!-- 右：词条区 + 搜索 -->
+        <div class="boardgame-ref-panel">
+          <h2 class="section-title small">术语 / 词条</h2>
+          <p class="section-subtitle">
+            在这里维护核心关键字：例如“核心单位”、“雇佣单位”、“政策”、
+            “泛用”、“体系”等，方便查规则时快速定位概念。
+          </p>
+
+          <div class="form-row">
+            <label for="term-search">搜索词条</label>
+            <input
+              id="term-search"
+              class="input"
+              type="text"
+              placeholder="输入关键词，例如：核心单位 / 控制 / 经济"
+            />
+          </div>
+
+          <div id="term-list" class="term-list-grid">
+            <!-- 词条列表由 JS 渲染 -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        © 2025 月之森的黄瓜架 · Board Game Reference
+      </div>
+    </footer>
+  </div>
+
+  <script src="particles.js"></script>
+  <script>
+    // 简单的前端词条数据，你以后可以一点点往里加 / 改
+    const TERMS = [
+      {
+        term: "核心单位",
+        category: "单位",
+        tags: ["单位", "核心", "战场"],
+        text: "构成卡组骨架、通常数量有限的关键单位。被击破往往会显著影响局势。",
+      },
+      {
+        term: "雇佣单位",
+        category: "单位",
+        tags: ["单位", "雇佣", "泛用"],
+        text: "数量较多、费用较低的单位，用于填补曲线、承担换血任务。",
+      },
+      {
+        term: "政策",
+        category: "卡牌类别",
+        tags: ["政策", "一次性", "战术"],
+        text: "打出后立即结算效果，不以单位形式留在场上的卡牌类型。",
+      },
+      {
+        term: "装备",
+        category: "卡牌类别",
+        tags: ["装备", "强化", "持续"],
+        text: "附着在单位或区域上，为其提供持续的强化效果或特殊能力。",
+      },
+      {
+        term: "经济",
+        category: "标签",
+        tags: ["经济", "资源"],
+        text: "与资源获取、费用减免、摸牌等经济相关的标签，用于描述偏向“发展”的卡牌。",
+      },
+      {
+        term: "控制",
+        category: "标签",
+        tags: ["控制", "干扰"],
+        text: "以限制对方行动、移除单位、锁定资源为主的标签，用于描述偏向“干预局势”的卡牌。",
+      },
+      {
+        term: "体系",
+        category: "标签",
+        tags: ["体系", "构筑"],
+        text: "当卡牌围绕特定关键字或组合形成可重复利用的打法时，称之为一个“体系”。",
+      },
+      {
+        term: "Lv1 / Lv2 / Lv3",
+        category: "等级",
+        tags: ["lv1", "lv2", "lv3"],
+        text: "用于标记卡牌在对局中的大致强度/复杂度层级，方便在构筑或查阅时快速分段。",
+      },
+      {
+        term: "（预留）关键字",
+        category: "预留",
+        tags: ["预留"],
+        text: "当你为游戏设计新的关键字（例如某种特殊状态）时，可以在这里新增条目。",
+      }
+    ];
+
+    function renderTerms(filterText = "") {
+      const container = document.getElementById("term-list");
+      if (!container) return;
+
+      const q = filterText.trim().toLowerCase();
+
+      const filtered = TERMS.filter((t) => {
+        if (!q) return true;
+        const haystack =
+          (t.term || "") +
+          " " +
+          (t.category || "") +
+          " " +
+          (t.text || "") +
+          " " +
+          (t.tags || []).join(" ");
+        return haystack.toLowerCase().includes(q);
+      });
+
+      if (!filtered.length) {
+        container.innerHTML = `
+          <p class="section-subtitle">
+            没有找到匹配的词条。可以考虑在 TERMS 数组中新增一条，或者放宽搜索关键词。
+          </p>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered
+        .map((t) => {
+          const tagLine = (t.tags || []).join(" · ");
+          return `
+            <article class="term-card">
+              <h3 class="term-title">${t.term}</h3>
+              <p class="term-meta">
+                ${t.category ? `<span>${t.category}</span>` : ""}
+                ${
+                  tagLine
+                    ? `<span class="dot-sep">·</span><span>${tagLine}</span>`
+                    : ""
+                }
+              </p>
+              <p class="term-text">${t.text}</p>
+            </article>
+          `;
+        })
+        .join("");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const input = document.getElementById("term-search");
+      if (input) {
+        input.addEventListener("input", () => {
+          renderTerms(input.value);
+        });
+      }
+      renderTerms("");
+    });
+  </script>
+</body>
+</html>
