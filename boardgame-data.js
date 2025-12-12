@@ -66,17 +66,17 @@ const CARD_GAME = {
   note: ""
 },
     // 这个就是你说的“空的虚边缘卡包”
-    {
-      id: "placeholder-next-pack",
-      name: "下一套卡包……？",
-      subtitle: "尚未命名",
-      side: "未公开",
-      era: "待定",
-      status: "placeholder", // 特殊状态：只是一个虚边缘位
-      description:
-        "新的故事、新的阵营，可能已经在笔记本的某一页出现，也可能还在黄瓜架上慢慢结果。",
-      note: ""
-    }
+{
+  id: "placeholder-next-pack",
+  name: "下一套卡包……？",
+  subtitle: "尚未命名",
+  side: "未公开",
+  era: "待定",
+  status: "placeholder", // 特殊状态：只是一个虚边缘位
+  description:
+    "新的故事、新的阵营，可能已经在笔记本的某一页出现，也可能还在黄瓜架上慢慢结果。",
+  note: ""
+}
   ],
 };
 
