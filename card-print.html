@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>在线制卡（打印导出） | 月之森的黄瓜架</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- 统一字体（你说“字体很好看，请给所有内容使用”）
+       Canvas 也会用到：渲染前会 await document.fonts.ready -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- ZIP + 下载 -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+  <style>
+    .print-tool-main { padding-bottom: 2.8rem; }
+    .print-tool-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      padding-bottom: 1.5rem;
+    }
+    @media (min-width: 980px) {
+      .print-tool-grid { grid-template-columns: 1.05fr 0.95fr; align-items: start; }
+    }
+    .print-panel {
+      background: var(--card-bg);
+      border: 1px solid rgba(148,163,184,0.55);
+      border-radius: 1rem;
+      box-shadow: var(--shadow-soft);
+      padding: 1rem 1.1rem;
+    }
+    .print-row { display: grid; gap: 0.5rem; margin-bottom: 0.8rem; }
+    .print-inline { display: flex; flex-wrap: wrap; gap: 0.8rem 1rem; align-items: center; }
+    .print-kv { display: flex; gap: 0.5rem; align-items: center; }
+    .print-kv label { color: var(--text-muted); font-size: 0.9rem; }
+    .status-line { color: var(--text-muted); font-size: 0.9rem; }
+    .preview-wrap { display: grid; gap: 0.7rem; }
+    .preview-title { margin: 0; font-size: 0.95rem; color: var(--text-muted); }
+    #preview-canvas {
+      width: 100%;
+      max-width: 420px;
+      height: auto;
+      border-radius: 0.9rem;
+      border: 1px solid rgba(148,163,184,0.5);
+      background: rgba(255,255,255,0.55);
+    }
+    .tiny-note { font-size: 0.85rem; color: var(--text-muted); line-height: 1.55; }
+    .pill {
+      display:inline-flex; align-items:center; justify-content:center;
+      padding: 0.15rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.45);
+      background: rgba(255,255,255,0.55);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="index.html" class="logo">月の森<span>🥒</span></a>
+        <nav class="nav-links">
+          <a href="boardgame.html" class="nav-link">桌游资料馆</a>
+          <a href="boardgame-reference.html" class="nav-link">规则与词条</a>
+          <a href="https://cyanrain7999.github.io" class="nav-link">返回主站</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container print-tool-main">
+      <section class="hero">
+        <p class="eyebrow">Tools · Print</p>
+        <h1 class="hero-title">在线制卡（整包导出）</h1>
+        <p class="hero-subtitle">
+          选择一个卡包 → 自动读取 <code>data/cards-&lt;id&gt;.js</code> → 按 v6 模板渲染成
+          <span class="pill">60×92mm</span> PNG（含 3mm 出血线），并打包成 ZIP 下载。
+          <br />
+          （每张 PNG 的像素尺寸 = 60×92mm @ 300dpi；打印店如果问尺寸，就报 60×92mm / 300dpi）
+        </p>
+      </section>
+
+      <section class="print-tool-grid">
+        <div class="print-panel">
+          <h2 class="section-title small">1) 选择卡包与导出参数</h2>
+
+          <div class="print-row">
+            <label for="pack-select">卡包</label>
+            <select id="pack-select" class="input"></select>
+          </div>
+
+          <div class="print-inline">
+            <div class="print-kv">
+              <label for="dpi-input">DPI</label>
+              <input id="dpi-input" class="input" type="number" value="300" min="150" max="600" style="width: 110px;" />
+            </div>
+
+            <label class="print-kv">
+              <input id="dup-toggle" type="checkbox" checked />
+              <span>按数量生成重复文件（count，最多 20）</span>
+            </label>
+
+            <label class="print-kv">
+              <input id="guide-toggle" type="checkbox" checked />
+              <span>显示辅助线（出血/安全线）</span>
+            </label>
+          </div>
+
+          <div class="print-inline" style="margin-top: 0.8rem;">
+            <button id="btn-generate" class="btn btn-primary btn-compact" type="button">
+              下载整包 ZIP
+            </button>
+            <span class="status-line">
+              进度：<strong id="progress"></strong>
+            </span>
+          </div>
+
+          <p id="status" class="status-line" style="margin-top: 0.6rem;">正在初始化…</p>
+
+          <p class="tiny-note" style="margin-top: 0.9rem;">
+            规则：
+            <br />
+            • <strong>单位牌</strong> 才显示 ATK/HP（判断：type 含“单位”或 stats 形如 x/y 或 tags 含“单位”）。
+            <br />
+            • “卡包”字段显示为 <strong>boardgame-data.js</strong> 里的 pack.name（你要求“阵营改成卡包名称”）。
+            <br />
+            • 文件名会尽量用 <code>code_name</code>，并自动清理非法字符。
+          </p>
+        </div>
+
+        <div class="print-panel preview-wrap">
+          <h2 class="section-title small">2) 预览</h2>
+          <p class="preview-title" id="preview-title">（预览会在选择卡包后自动生成）</p>
+          <canvas id="preview-canvas" width="709" height="1087"></canvas>
+          <p class="tiny-note">
+            这张预览就是实际导出的样式（缩放显示）。如果你想关掉辅助线，取消勾选即可。
+          </p>
+        </div>
+      </section>
+
+      <section class="print-panel" style="padding: 0.9rem 1.1rem;">
+        <h2 class="section-title small">3) 放到网站哪里？</h2>
+        <p class="tiny-note" style="margin:0;">
+          把本页和两个 JS 文件放在 portfolio 仓库根目录：
+          <code>card-print.html</code>、<code>card-print.js</code>、<code>card-template-v6.js</code>。
+          <br />
+          然后在 <code>boardgame.html</code> 的角落工具入口加一个链接到 <code>card-print.html</code> 就行。
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        © 2025 月之森的黄瓜架 · Tools
+      </div>
+    </footer>
+  </div>
+
+  <!-- 站内背景粒子（你现在工具页用的是 particles.js） -->
+  <script src="particles.js"></script>
+
+  <!-- 数据源：卡包列表（你现在结构是 packs-only，单卡用 data/cards-xxx.js 动态载入） -->
+  <script src="boardgame-data.js"></script>
+
+  <!-- 渲染模板 + 工具逻辑 -->
+  <script src="card-template-v6.js"></script>
+  <script src="card-print.js"></script>
+</body>
+</html>
