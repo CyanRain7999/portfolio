@@ -44,30 +44,47 @@
 
           <div class="rules-list">
             <!-- 基础规则：跳到规则书页面的 #core-rules 段 -->
-            <a class="rule-card rule-card--link" href="boardgame-rules.html#core-rules">
-              <h3 class="rule-title">基础规则 · Lv1 对局结构</h3>
-              <p class="rule-meta">主世界 · 本篇</p>
+            <a class="rule-card rule-card--link" href="boardgame-rules.html#one">
+              <h3 class="rule-title">游戏背景、游戏目标与胜利条件</h3>
+              <p class="rule-meta"></p>
               <p class="rule-text">
-                包含回合流程、资源获取、部署单位/政策的基本步骤，以及胜负条件说明。
+                胜负条件说明。
               </p>
             </a>
 
             <!-- DLC1 规则 -->
-            <a class="rule-card rule-card--link" href="boardgame-rules.html#dlc1-rules">
-              <h3 class="rule-title">扩展规则 · DLC1：新教徒 / 森妖怪</h3>
-              <p class="rule-meta">DLC1 · 条件与新机制</p>
+            <a class="rule-card rule-card--link" href="boardgame-rules.html#two">
+              <h3 class="rule-title">游戏配件与设置</h3>
+              <p class="rule-meta"></p>
               <p class="rule-text">
-                记录新教徒与森妖怪引入的额外关键字、新资源或特殊区域规则，
-                以及与本篇的兼容方式。
+                区域设置、卡牌设置、游戏准备。
               </p>
             </a>
 
             <!-- 镜世界规则 -->
-            <a class="rule-card rule-card--link" href="boardgame-rules.html#mirror-rules">
-              <h3 class="rule-title">镜世界规则 · 鸿园等卡包</h3>
-              <p class="rule-meta">DLC2 · 镜世界</p>
+            <a class="rule-card rule-card--link" href="boardgame-rules.html#three">
+              <h3 class="rule-title">回合流程</h3>
+              <p class="rule-meta"></p>
               <p class="rule-text">
-                当对局进入镜世界时，采用的额外流程、时空/平行世界相关的特殊条目。
+                游戏按回合制进行，每位玩家的回合必须严格按照四个阶段顺序执行。
+              </p>
+            </a>
+
+            <!-- 镜世界规则 -->
+            <a class="rule-card rule-card--link" href="boardgame-rules.html#four">
+              <h3 class="rule-title">战斗与伤害规则</h3>
+              <p class="rule-meta"></p>
+              <p class="rule-text">
+                遭遇状态、远程攻击、主城攻防、单位离场状态。
+              </p>
+            </a>
+
+            <!-- 镜世界规则 -->
+            <a class="rule-card rule-card--link" href="boardgame-rules.html#five">
+              <h3 class="rule-title">时代演进与急报系统</h3>
+              <p class="rule-meta"></p>
+              <p class="rule-text">
+                时代演进、急报、晋升结算表。
               </p>
             </a>
 
@@ -75,7 +92,7 @@
             <a class="rule-card rule-card--link rule-card--placeholder" href="boardgame-rules.html#faq">
               <h3 class="rule-title">Q&A 与勘误</h3>
               <p class="rule-text">
-                将来当出现 FAQ、勘误、平衡调整说明时，可以集中放在这里。
+                FAQ、勘误、平衡调整说明。
               </p>
             </a>
           </div>
@@ -114,64 +131,9 @@
   </div>
 
   <script src="particles.js"></script>
+  <script src="data/terms/terms.js"></script>
   <script>
-    // 简单的前端词条数据，你以后可以一点点往里加 / 改
-    const TERMS = [
-      {
-        term: "核心单位",
-        category: "单位",
-        tags: ["单位", "核心", "战场"],
-        text: "构成卡组骨架、通常数量有限的关键单位。被击破往往会显著影响局势。",
-      },
-      {
-        term: "雇佣单位",
-        category: "单位",
-        tags: ["单位", "雇佣", "泛用"],
-        text: "数量较多、费用较低的单位，用于填补曲线、承担换血任务。",
-      },
-      {
-        term: "政策",
-        category: "卡牌类别",
-        tags: ["政策", "一次性", "战术"],
-        text: "打出后立即结算效果，不以单位形式留在场上的卡牌类型。",
-      },
-      {
-        term: "装备",
-        category: "卡牌类别",
-        tags: ["装备", "强化", "持续"],
-        text: "附着在单位或区域上，为其提供持续的强化效果或特殊能力。",
-      },
-      {
-        term: "经济",
-        category: "标签",
-        tags: ["经济", "资源"],
-        text: "与资源获取、费用减免、摸牌等经济相关的标签，用于描述偏向“发展”的卡牌。",
-      },
-      {
-        term: "控制",
-        category: "标签",
-        tags: ["控制", "干扰"],
-        text: "以限制对方行动、移除单位、锁定资源为主的标签，用于描述偏向“干预局势”的卡牌。",
-      },
-      {
-        term: "体系",
-        category: "标签",
-        tags: ["体系", "构筑"],
-        text: "当卡牌围绕特定关键字或组合形成可重复利用的打法时，称之为一个“体系”。",
-      },
-      {
-        term: "Lv1 / Lv2 / Lv3",
-        category: "等级",
-        tags: ["lv1", "lv2", "lv3"],
-        text: "用于标记卡牌在对局中的大致强度/复杂度层级，方便在构筑或查阅时快速分段。",
-      },
-      {
-        term: "（预留）关键字",
-        category: "预留",
-        tags: ["预留"],
-        text: "当你为游戏设计新的关键字（例如某种特殊状态）时，可以在这里新增条目。",
-      }
-    ];
+    const TERMS = window.BOARDGAME_TERMS || [];
 
     function renderTerms(filterText = "") {
       const container = document.getElementById("term-list");
