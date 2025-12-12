@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>词条生成器 | 月之森的黄瓜架</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="shell">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="index.html" class="logo">月の森<span>🥒</span></a>
+        <nav class="nav-links">
+          <a href="boardgame.html" class="nav-link">桌游卡包</a>
+          <a href="boardgame-reference.html" class="nav-link">规则与词条</a>
+          <a href="index.html" class="nav-link">资料馆首页</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container boardgame-ref-main">
+      <section class="hero">
+        <p class="eyebrow">Tools · Term Generator</p>
+        <h1 class="hero-title">术语 / 词条生成器</h1>
+        <p class="hero-subtitle">
+          填写词条 → 添加到列表 → 一键生成能直接粘贴进 <code>boardgame-reference.html</code> 的 <code>TERMS</code> 数组代码。
+        </p>
+      </section>
+
+      <section class="boardgame-ref-grid">
+        <!-- 左：输入与列表 -->
+        <div class="boardgame-ref-panel">
+          <h2 class="section-title small">新增词条</h2>
+
+          <div class="form-row">
+            <label>词条名 term</label>
+            <input id="f-term" class="input" type="text" placeholder="例如：核心单位" />
+          </div>
+
+          <div class="form-row">
+            <label>分类 category</label>
+            <input id="f-category" class="input" type="text" placeholder="例如：单位 / 标签 / 卡牌类别" />
+          </div>
+
+          <div class="form-row">
+            <label>标签 tags（逗号/中文逗号分隔）</label>
+            <input id="f-tags" class="input" type="text" placeholder="例如：单位,核心,战场" />
+          </div>
+
+          <div class="form-row">
+            <label>解释 text</label>
+            <textarea id="f-text" class="card-gen-textarea" placeholder="写解释。支持换行。"></textarea>
+          </div>
+
+          <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+            <button id="btn-add" class="btn btn-primary btn-compact" type="button">＋ 添加到列表</button>
+            <button id="btn-clear-form" class="btn btn-ghost btn-compact" type="button">清空输入</button>
+          </div>
+
+          <hr style="margin:1rem 0; border:none; border-top:1px solid rgba(148,163,184,.45);" />
+
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:.6rem;">
+            <h2 class="section-title small" style="margin:0;">当前词条列表</h2>
+            <button id="btn-clear-all" class="btn btn-ghost btn-xxs" type="button">清空全部</button>
+          </div>
+
+          <div id="term-items" class="term-list-grid" style="margin-top:.8rem;">
+            <!-- 预览列表 -->
+          </div>
+        </div>
+
+        <!-- 右：输出 -->
+        <div class="boardgame-ref-panel">
+          <h2 class="section-title small">代码输出</h2>
+          <p class="section-subtitle">
+            你可以生成：单条对象（粘进 <code>TERMS</code> 数组里），或者完整 <code>const TERMS = [...]</code>。
+          </p>
+
+          <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+            <button id="btn-gen-item" class="btn btn-ghost btn-compact" type="button">生成：所选单条对象</button>
+            <button id="btn-gen-all" class="btn btn-primary btn-compact" type="button">生成：完整 TERMS</button>
+          </div>
+
+          <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.6rem;">
+            <button id="btn-copy" class="btn btn-ghost btn-compact" type="button">复制到剪贴板</button>
+            <button id="btn-download" class="btn btn-ghost btn-compact" type="button">下载 terms-data.js</button>
+          </div>
+
+          <div class="form-row" style="margin-top:.8rem;">
+            <label>输出预览</label>
+            <textarea id="out" class="card-gen-textarea" readonly></textarea>
+          </div>
+
+          <details style="margin-top:.6rem;">
+            <summary>怎么粘贴到 reference 里？</summary>
+            <p class="section-subtitle" style="margin-top:.5rem;">
+              你的 <code>boardgame-reference.html</code> 里有 <code>const TERMS = [ ... ]</code>。:contentReference[oaicite:1]{index=1}
+              <br/>
+              - 生成“单条对象” → 粘到数组里任意位置，注意逗号。
+              <br/>
+              - 生成“完整 TERMS” → 直接用整段替换原来的 <code>const TERMS = [...]</code>。
+            </p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        © 2025 月之森的黄瓜架 · Term Generator
+      </div>
+    </footer>
+  </div>
+
+  <script src="particles.js"></script>
+  <script>
+    // ---- 数据 ----
+    const state = {
+      items: [],      // {term, category, tags:[], text}
+      selected: -1,
+    };
+
+    // ---- 工具 ----
+    function splitTags(raw) {
+      return String(raw || "")
+        .replace(/，/g, ",")
+        .split(",")
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
+    function jsString(s) {
+      // 输出为 JS 字符串字面量（双引号）
+      return String(s ?? "")
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g, '\\"')
+        .replace(/\\r/g, "")
+        .replace(/\\n/g, "\\n");
+    }
+
+    function itemToObjectCode(it) {
+      const tags = (it.tags || []).map(t => `"${jsString(t)}"`).join(", ");
+      return `{
+  term: "${jsString(it.term)}",
+  category: "${jsString(it.category)}",
+  tags: [${tags}],
+  text: "${jsString(it.text)}",
+},`;
+    }
+
+    function allToTermsCode(items) {
+      const body = items.map(itemToObjectCode).join("\\n\\n");
+      return `// terms-data.js (copy/paste)
+// 直接替换 boardgame-reference.html 里的 TERMS
+const TERMS = [
+${body ? body.replace(/^/gm, "  ") : ""}
+];`;
+    }
+
+    function downloadText(filename, text) {
+      const blob = new Blob([text], { type: "text/javascript;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (e) {
+        // fallback
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        ta.remove();
+        return ok;
+      }
+    }
+
+    // ---- UI ----
+    const el = {
+      term: document.getElementById("f-term"),
+      category: document.getElementById("f-category"),
+      tags: document.getElementById("f-tags"),
+      text: document.getElementById("f-text"),
+      add: document.getElementById("btn-add"),
+      clearForm: document.getElementById("btn-clear-form"),
+      clearAll: document.getElementById("btn-clear-all"),
+      items: document.getElementById("term-items"),
+      out: document.getElementById("out"),
+      genItem: document.getElementById("btn-gen-item"),
+      genAll: document.getElementById("btn-gen-all"),
+      copy: document.getElementById("btn-copy"),
+      download: document.getElementById("btn-download"),
+    };
+
+    function renderList() {
+      el.items.innerHTML = "";
+
+      if (!state.items.length) {
+        el.items.innerHTML = `
+          <p class="section-subtitle">还没有词条。左边填完点“添加到列表”。</p>
+        `;
+        return;
+      }
+
+      state.items.forEach((it, idx) => {
+        const card = document.createElement("article");
+        card.className = "term-card";
+        card.style.cursor = "pointer";
+        card.style.outline = idx === state.selected ? "2px solid rgba(59,122,87,.75)" : "none";
+
+        const tagLine = (it.tags || []).join(" · ");
+
+        card.innerHTML = `
+          <h3 class="term-title">${escapeHtml(it.term)}</h3>
+          <p class="term-meta">
+            <span>${escapeHtml(it.category || "")}</span>
+            ${tagLine ? `<span class="dot-sep">·</span><span>${escapeHtml(tagLine)}</span>` : ""}
+          </p>
+          <p class="term-text">${escapeHtml(it.text || "")}</p>
+          <div style="display:flex; gap:.4rem; margin-top:.5rem; flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-xxs" data-act="edit">编辑</button>
+            <button class="btn btn-ghost btn-xxs" data-act="delete">删除</button>
+            <button class="btn btn-ghost btn-xxs" data-act="select">选中</button>
+          </div>
+        `;
+
+        card.addEventListener("click", () => {
+          state.selected = idx;
+          renderList();
+        });
+
+        card.querySelectorAll("button").forEach(btn => {
+          btn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            const act = btn.getAttribute("data-act");
+            if (act === "select") {
+              state.selected = idx;
+              renderList();
+              return;
+            }
+            if (act === "delete") {
+              state.items.splice(idx, 1);
+              if (state.selected === idx) state.selected = -1;
+              if (state.selected > idx) state.selected -= 1;
+              renderList();
+              return;
+            }
+            if (act === "edit") {
+              // 把条目塞回左侧表单，方便你改完再“添加”一条（旧的你可以删）
+              el.term.value = it.term || "";
+              el.category.value = it.category || "";
+              el.tags.value = (it.tags || []).join(", ");
+              el.text.value = it.text || "";
+              state.selected = idx;
+              renderList();
+              return;
+            }
+          });
+        });
+
+        el.items.appendChild(card);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function clearForm() {
+      el.term.value = "";
+      el.category.value = "";
+      el.tags.value = "";
+      el.text.value = "";
+    }
+
+    // ---- 事件 ----
+    el.add.addEventListener("click", () => {
+      const term = el.term.value.trim();
+      const category = el.category.value.trim();
+      const tags = splitTags(el.tags.value);
+      const text = el.text.value.trim();
+
+      if (!term) {
+        alert("term 不能为空");
+        return;
+      }
+      if (!text) {
+        alert("text 不能为空（至少写一句解释）");
+        return;
+      }
+
+      state.items.push({ term, category, tags, text });
+      state.selected = state.items.length - 1;
+      renderList();
+      clearForm();
+    });
+
+    el.clearForm.addEventListener("click", clearForm);
+
+    el.clearAll.addEventListener("click", () => {
+      if (!confirm("确定清空全部词条吗？")) return;
+      state.items = [];
+      state.selected = -1;
+      renderList();
+      el.out.value = "";
+    });
+
+    el.genItem.addEventListener("click", () => {
+      if (state.selected < 0 || !state.items[state.selected]) {
+        alert("请先在左侧词条列表里选中一条。");
+        return;
+      }
+      el.out.value = itemToObjectCode(state.items[state.selected]);
+    });
+
+    el.genAll.addEventListener("click", () => {
+      el.out.value = allToTermsCode(state.items);
+    });
+
+    el.copy.addEventListener("click", async () => {
+      const text = el.out.value.trim();
+      if (!text) {
+        alert("输出框为空，先生成代码再复制。");
+        return;
+      }
+      const ok = await copyToClipboard(text);
+      alert(ok ? "已复制到剪贴板" : "复制失败（可以手动全选复制）");
+    });
+
+    el.download.addEventListener("click", () => {
+      const text = el.out.value.trim();
+      if (!text) {
+        alert("输出框为空，先生成代码再下载。");
+        return;
+      }
+      downloadText("terms-data.js", text + "\\n");
+    });
+
+    // 初始渲染
+    renderList();
+  </script>
+</body>
+</html>

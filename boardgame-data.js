@@ -35,17 +35,36 @@ const CARD_GAME = {
   description: "在这里写一句对「新教徒」的介绍。",
   note: ""
 },
-    {
-      id: "forest-spirits-dlc1",
-      name: "森妖怪",
-      subtitle: "DLC1 · 世界",
-      side: "中立 / 森域",
-      era: "主世界 · 扩展",
-      status: "wip",
-      description:
-        "以场地与环境为轴心的卡包，让森林本身成为棋盘的一部分。",
-      note: ""
-    },
+{
+  id: "yokai",
+  name: "森妖怪",
+  subtitle: "DLC1·本篇",
+  side: "森妖怪",
+  era: "主世界·迭代",
+  status: "released",
+  description: "在这里写一句对「森妖怪」的介绍。",
+  note: ""
+},
+{
+  id: "period",
+  name: "句点",
+  subtitle: "DLC2·本篇",
+  side: "句点工作室",
+  era: "镜世界·迭代",
+  status: "released",
+  description: "在这里写一句对「句点」的介绍。",
+  note: ""
+},
+{
+  id: "Hong",
+  name: "鸿园",
+  subtitle: "DLC2·本篇",
+  side: "鸿园",
+  era: "镜世界·迭代",
+  status: "released",
+  description: "在这里写一句对「鸿园」的介绍。",
+  note: ""
+},
     // 这个就是你说的“空的虚边缘卡包”
     {
       id: "placeholder-next-pack",
